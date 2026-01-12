@@ -1,9 +1,12 @@
 // backend/routes/auth.js
 
 const express = require('express');
+const nodemailer = require('nodemailer');
 const router = express.Router();
 const prisma = require('../lib/prisma');
 const bcrypt = require('bcryptjs');
+const path = require('path')
+const fs = require('fs')
 const jwt = require('jsonwebtoken');
 const { registerSchema, loginSchema } = require('../schemas/validation');
 const { authLimiter, registerLimiter } = require('../middleware/rateLimiting');
@@ -46,6 +49,20 @@ const generateTokens = (user) => {
     return { accessToken, refreshToken };
 };
 
+
+//I define the smtp parts
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    secure: true,
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+    }
+});
+
+const htmlPath = path.join(process.cwd(),'welcomeMail.html');
+const welcomeMailTemplate = fs.readFileSync(htmlPath, 'utf8');
 // Register — supports both new organization creation and invite-based join
 router.post('/register', registerLimiter, async (req, res) => {
     try {
@@ -100,6 +117,18 @@ router.post('/register', registerLimiter, async (req, res) => {
 
                 return newUser;
             });
+
+            //Sending welcome email upon successful registration via invite
+
+            const welcomeMail = welcomeMailTemplate.replace('name', name);
+            
+            await transporter.sendMail({
+                from: `"ScriptishRX" <${process.env.SMTP_USER}>`,
+                to: email,
+                subject: 'Welcome to ScriptishRX!',
+                html: welcomeMail
+            });
+            console.log('Welcome email sent to:', email);
 
             const { accessToken, refreshToken } = generateTokens(user);
             res.cookie('refresh_token', refreshToken, COOKIE_OPTIONS);
