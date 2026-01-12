@@ -1,0 +1,1 @@
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,24412,e=>{"use strict";var t=e.i(48277);function i(){return(0,t.jsx)("div",{style:{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"},children:(0,t.jsx)("h1",{children:"404 - Page Not Found"})})}e.s(["default",()=>i])}]);

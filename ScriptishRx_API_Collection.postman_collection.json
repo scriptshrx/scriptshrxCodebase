@@ -1,0 +1,623 @@
+{
+    "info": {
+        "name": "ScriptishRx API Collection",
+        "description": "Complete API endpoints for ScriptishRx platform",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Register User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\",\n  \"name\": \"John Doe\",\n  \"companyName\": \"My Company\",\n  \"location\": \"Lagos\",\n  \"timezone\": \"Africa/Lagos\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "login"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Email Service",
+            "item": [
+                {
+                    "name": "Check Email Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/emails/status",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "emails",
+                                "status"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Send Welcome Email",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userName\": \"John Doe\",\n  \"userEmail\": \"john@example.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/emails/send-welcome",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "emails",
+                                "send-welcome"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Send Org Invite Email",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"inviteeEmail\": \"colleague@example.com\",\n  \"organizationName\": \"My Company\",\n  \"inviteLink\": \"https://example.com/register?invite=token123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/emails/send-invite",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "emails",
+                                "send-invite"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Send Booking Confirmation",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"clientName\": \"Jane Doe\",\n  \"clientEmail\": \"jane@example.com\",\n  \"appointmentDate\": \"January 15, 2026\",\n  \"appointmentTime\": \"2:00 PM\",\n  \"providerName\": \"Dr. Smith\",\n  \"purpose\": \"Consultation\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/emails/send-booking-confirmation",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "emails",
+                                "send-booking-confirmation"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Send Plan Upgrade Email",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userName\": \"John Doe\",\n  \"userEmail\": \"john@example.com\",\n  \"planName\": \"Professional\",\n  \"planPrice\": 9999,\n  \"currency\": \"NGN\",\n  \"features\": [\n    \"Unlimited Voice Calls\",\n    \"Advanced Analytics\",\n    \"Priority Support\"\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/emails/send-plan-upgrade",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "emails",
+                                "send-plan-upgrade"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Integrations",
+            "item": [
+                {
+                    "name": "Get Integration Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/integrations/status",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "integrations",
+                                "status"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Start Google Calendar OAuth",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/integrations/google/auth",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "integrations",
+                                "google",
+                                "auth"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Check Google Calendar Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/integrations/google/status",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "integrations",
+                                "google",
+                                "status"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Sync Single Booking to Calendar",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/integrations/google/sync-booking/{{booking_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "integrations",
+                                "google",
+                                "sync-booking",
+                                "{{booking_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Sync All Bookings to Calendar",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/integrations/google/sync-all",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "integrations",
+                                "google",
+                                "sync-all"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Disconnect Google Calendar",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/integrations/google/disconnect",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "integrations",
+                                "google",
+                                "disconnect"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Bookings",
+            "item": [
+                {
+                    "name": "Get All Bookings",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/bookings",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "bookings"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Booking",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"clientId\": \"client-id-123\",\n  \"date\": \"2026-01-15T14:00:00Z\",\n  \"purpose\": \"Consultation\",\n  \"status\": \"Scheduled\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/bookings",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "bookings"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Voice",
+            "item": [
+                {
+                    "name": "Voice Health Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/voice/health",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "voice",
+                                "health"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Voice Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/voice/logs",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "voice",
+                                "logs"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Chat",
+            "item": [
+                {
+                    "name": "Chat Service Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/chat/status",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "chat",
+                                "status"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Chat History",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/chat/history",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "chat",
+                                "history"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Send Chat Message",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"message\": \"What services do you offer?\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/chat/message",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "chat",
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Payments",
+            "item": [
+                {
+                    "name": "Initialize Payment",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"plan\": \"Intermediate\",\n  \"cycle\": \"monthly\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/payments/create-payment-intent",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "payments",
+                                "create-payment-intent"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Verify Payment",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"reference\": \"payment-reference-123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/payments/verify-transaction",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "payments",
+                                "verify-transaction"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:5000",
+            "type": "string",
+            "description": "Change to your production domain for production requests"
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string",
+            "description": "JWT token - get this from /api/auth/login response, paste here and it auto-fills Authorization headers"
+        },
+        {
+            "key": "booking_id",
+            "value": "",
+            "type": "string",
+            "description": "Get booking ID from GET /api/bookings response"
+        },
+        {
+            "key": "user_email",
+            "value": "user@example.com",
+            "type": "string",
+            "description": "Test user email for registration/login"
+        },
+        {
+            "key": "user_password",
+            "value": "Password123!",
+            "type": "string",
+            "description": "Test user password for login"
+        }
+    ]
+}

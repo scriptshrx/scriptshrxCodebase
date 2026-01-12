@@ -1,0 +1,26 @@
+{
+    "name": "ScriptishRx Lead Capture",
+    "flow": [
+        {
+            "module": "webhook",
+            "action": "receive",
+            "parameters": {
+                "url": "https://hook.us2.make.com/h3q86akcz7t9bwcy2yajb6gb6se04ny6"
+            }
+        },
+        {
+            "module": "airtable",
+            "action": "createRecord",
+            "parameters": {
+                "baseId": "your-base-id",
+                "tableId": "Leads",
+                "fields": {
+                    "Name": "{{1.name}}",
+                    "Email": "{{1.email}}",
+                    "Phone": "{{1.phone}}",
+                    "Interest": "{{1.interest}}"
+                }
+            }
+        }
+    ]
+}

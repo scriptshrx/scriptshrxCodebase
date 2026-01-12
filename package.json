@@ -1,0 +1,23 @@
+{
+    "name": "scriptishrx",
+    "private": true,
+    "scripts": {
+        "install": "npm install --prefix frontend && npm install --prefix backend",
+        "postinstall": "npm install --prefix frontend && npm install --prefix backend",
+        "build": "npm run build --prefix frontend && rm -rf backend/public && mkdir -p backend/public && cp -R frontend/out/* backend/public/",
+        "build:render": "chmod +x ./render-build.sh && ./render-build.sh",
+        "start": "node backend/src/server.js",
+        "start:dev": "npm-run-all --parallel start:backend start:frontend",
+        "start:backend": "npm start --prefix backend",
+        "start:frontend": "npm start --prefix frontend",
+        "dev": "npm-run-all --parallel dev:backend dev:frontend",
+        "dev:backend": "npm run dev --prefix backend",
+        "dev:frontend": "npm run dev --prefix frontend"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "npm-run-all": "^4.1.5"
+    }
+}

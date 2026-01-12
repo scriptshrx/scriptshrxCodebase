@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+:root {
+  /* =========================================
+     PREMIUM COLOR SYSTEM (Light Mode Default)
+     ========================================= */
+  
+  /* Base Backgrounds */
+  --background: #f8fafc;       /* Slate 50 */
+  --foreground: #0f172a;       /* Slate 900 */
+  --surface: #ffffff;          /* Pure White */
+  --surface-highlight: #f1f5f9; /* Slate 100 */
+
+  /* Brand Gradient Colors */
+  --primary-start: #4F46E5;    /* Indigo 600 */
+  --primary-end: #7C3AED;      /* Violet 600 */
+  --accent: #0ea5e9;           /* Sky 500 */
+
+  /* Semantic Feedback Colors */
+  --success: #10b981;          /* Emerald 500 */
+  --success-bg: #ecfdf5;       /* Emerald 50 */
+  --warning: #f59e0b;          /* Amber 500 */
+  --warning-bg: #fffbeb;       /* Amber 50 */
+  --error: #ef4444;            /* Red 500 */
+  --error-bg: #fef2f2;         /* Red 50 */
+  --info: #3b82f6;             /* Blue 500 */
+  --info-bg: #eff6ff;          /* Blue 50 */
+
+  /* Glassmorphism Variables */
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+@theme inline {
+  /* Map CSS Variables to Tailwind Utilities */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-highlight: var(--surface-highlight);
+  
+  --color-primary-start: var(--primary-start);
+  --color-primary-end: var(--primary-end);
+  --color-accent: var(--accent);
+
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-error: var(--error);
+  --color-error-bg: var(--error-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+
+  --color-glass-border: var(--glass-border);
+  --color-glass-bg: var(--glass-bg);
+
+  /* Typography */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, monospace;
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.5s ease-out forwards;
+  --animate-slide-up: slide-up 0.5s ease-out forwards;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @keyframes fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes slide-up {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  /* Premium Subtle Mesh Gradient */
+  background-image:
+    radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.08) 0px, transparent 50%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =========================================
+   UTILITY CLASSES (Design System Components)
+   ========================================= */
+
+/* Premium Glass Card */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  @apply rounded-2xl;
+}
+
+/* Interactive Card Hover Effect */
+.hover-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
+}
+
+/* Primary Gradient Text */
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Primary Button Gradient */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-start), var(--primary-end));
+  color: white;
+  @apply px-4 py-2 rounded-lg font-medium shadow-md transition-transform active:scale-95 hover:opacity-90;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.2);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.4);
+}

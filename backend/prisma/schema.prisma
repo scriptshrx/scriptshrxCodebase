@@ -1,0 +1,441 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Tenant {
+  id               String  @id @default(uuid())
+  name             String
+  location         String?
+  timezone         String?
+  phoneNumber      String? @unique
+
+  // Customization & Subscription
+  plan             String  @default("Startup") // Startup, Growth, Enterprise
+  subscriptionPlanId String?
+  subscriptionPlan SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  
+  branding         TenantBranding?
+  
+  // Customization (Legacy - migrate to branding)
+  brandColor       String  @default("#000000") // Keep for backward compat
+  logoUrl          String? // Keep for backward compat
+
+  aiName           String  @default("ScriptishRx AI")
+  aiWelcomeMessage String?
+  customSystemPrompt String?
+  integrations     String?
+
+  // Communication & AI Configuration
+  twilioConfig     Json?   // Stores: { accountSid, authToken, phoneNumber, voiceSettings: {...} }
+  aiConfig         Json?   // Stores: { model, temperature, systemPrompt, voiceId, welcomeMessage }
+  
+  // Deprecated (Migrate to aiConfig)
+  voiceCakeAgentId String? @ignore
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  users            User[]
+  clients          Client[]
+  bookings         Booking[]
+  minutes          MeetingMinute[]
+  messages         Message[]
+  workflows        Workflow[]
+  campaigns        Campaign[]
+  invites          Invite[]
+  callSessions     CallSession[]
+  customTools      CustomTool[]
+  transactions     Transaction[]
+  services         Service[]
+
+  @@index([name])
+}
+
+model TenantBranding {
+  id          String   @id @default(uuid())
+  tenantId    String   @unique
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  logoUrl     String?
+  faviconUrl  String?
+  primaryColor String  @default("#000000")
+  secondaryColor String?
+  fontFamily  String   @default("Inter")
+  portalTitle String?
+  
+  customCss   String?  // Enterprise only
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SubscriptionPlan {
+  id          String   @id @default(uuid())
+  name        String   @unique // Startup, Growth, Enterprise
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  
+  // Entitlements
+  maxBookingsPerMonth Int? @default(50)
+  maxUsers            Int @default(1)
+  features            String[] // ["voice_agent", "advanced_analytics", "white_label"]
+  
+  tenants     Tenant[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id           String  @id @default(uuid())
+  email        String  @unique
+  password     String
+  name         String?
+  role         String  @default("MEMBER") // SUPER_ADMIN, ADMIN, MEMBER
+  
+  // RBAC Fields
+  roleId       String?
+  definedRole  Role?   @relation(fields: [roleId], references: [id])
+
+  tenantId     String
+  tenant       Tenant  @relation(fields: [tenantId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  subscription Subscription?
+  avatarUrl    String?
+  phoneNumber  String?
+  notifications Notification[]
+  transactions Transaction[]
+  // Google Calendar integration fields
+  googleAccessToken   String? @db.Text
+  googleRefreshToken  String? @db.Text
+  googleTokenExpiry   BigInt?
+
+  @@index([tenantId])
+  @@index([email])
+  @@index([role])
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique // SUPER_ADMIN, OWNER, ADMIN, MEMBER, SUBSCRIBER
+  description String?
+  isSystem    Boolean      @default(false)
+  users       User[]
+  permissions Permission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  resource    String   // e.g. clients, settings
+  action      String   // e.g. create, read
+  description String?
+  roles       Role[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([resource, action])
+}
+
+model Client {
+  id        String  @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?
+  notes     String?
+  source    String  @default("Direct")
+  
+  // AI-Powered Lead Scoring (Enterprise Feature)
+  leadScore      Int     @default(0)  // 0-100 score based on AI analysis
+  lastSentiment  String? // positive, neutral, frustrated, angry
+  
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bookings  Booking[]
+  minutes   MeetingMinute[]
+  callSessions CallSession[]
+
+  @@index([tenantId])
+  @@index([phone])
+  @@index([email])
+  @@index([leadScore]) // For sorting high-priority leads
+}
+
+model Booking {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  date      DateTime
+  status    String   @default("Scheduled")
+  purpose   String?
+  meetingLink String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([date])
+  @@index([status])
+}
+
+model MeetingMinute {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([clientId])
+}
+
+model Message {
+  id            String       @id @default(uuid())
+  sessionId     String
+  role          String
+  content       String
+  tenantId      String?
+  tenant        Tenant?      @relation(fields: [tenantId], references: [id])
+  userId        String?
+  source        String       @default("chat") // chat, voice, sms
+  callSessionId String?
+  callSession   CallSession? @relation(fields: [callSessionId], references: [id])
+  createdAt     DateTime     @default(now())
+
+  @@index([sessionId])
+  @@index([tenantId])
+  @@index([callSessionId])
+}
+
+model CallSession {
+  id           String    @id @default(uuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  clientId     String?
+  client       Client?   @relation(fields: [clientId], references: [id])
+  callSid      String    @unique // Twilio Call SID
+  callerPhone  String?
+  status       String    @default("in_progress") // in_progress, completed, failed
+  direction    String    @default("inbound") // inbound, outbound
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+  duration     Int?      // Duration in seconds
+  transcript   String?   // Full conversation transcript
+  summary      String?   // AI-generated summary
+  actionItems  Json?     // Extracted action items [{type, description, completed}]
+  bookingId    String?   // If a booking was created during call
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  messages     Message[]
+
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([callSid])
+  @@index([callerPhone])
+}
+
+model Subscription {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+  
+  // Core Fields
+  type             String   @default("INDIVIDUAL") // INDIVIDUAL, ORGANIZATION
+  plan             String?   // Legacy: Basic, Intermediate...
+  planId           String?   // New: startup_monthly, growth_yearly
+  stripeIds        Json?    // { customer: "cus_", subscription: "sub_" }
+  status           String   // active, trial, canceled, expired
+  billingCycle     String   @default("monthly") // monthly, yearly
+  
+  // Payment Links
+  stripeId         String?  // Legacy
+  paypalId         String?  // Legacy
+  paymentReference String?  // Active Payment Ref (Paystack/Stripe)
+  
+  startDate        DateTime @default(now())
+  endDate          DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Workflow {
+  id        String   @id @default(uuid())
+  name      String
+  trigger   String
+  actions   String
+  isActive  Boolean  @default(true)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  type      String
+  link      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String
+  userId     String?
+  
+  // Operation Details (SOC2 Compliance)
+  model      String?  @default("legacy") // e.g., "Client", "Booking", "User"
+  operation  String?  @default("legacy") // create, update, delete, updateMany, deleteMany
+  recordId   String?  // ID of the affected record
+  changes    String?  // JSON snapshot of data changes
+  
+  action     String   // Legacy field, keep for backward compat
+  details    String?  // Legacy field
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([model])
+  @@index([createdAt])
+}
+
+model Campaign {
+  id         String   @id @default(uuid())
+  name       String
+  type       String
+  status     String
+  sentCount  Int      @default(0)
+  openCount  Int      @default(0)
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model Invite {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email      String
+  role       String
+  token      String    @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdBy  String
+  createdAt  DateTime  @default(now())
+
+  @@index([token])
+  @@index([email])
+  @@index([tenantId])
+}
+
+// Custom Function Calling Tools for Voice/Chat Agents
+model CustomTool {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name        String   // Function name: e.g., "check_inventory", "schedule_pickup"
+  displayName String?  // Human-readable name for UI
+  description String   // Description for OpenAI function calling
+  
+  // OpenAI Function Parameters Schema (JSON Schema format)
+  parameters  Json     // { type: "object", properties: {...}, required: [...] }
+  
+  // Execution Configuration
+  handlerType String   @default("webhook") // webhook, internal, api
+  webhookUrl  String?  // URL to call for webhook handlers
+  apiConfig   Json?    // For api handlers: { endpoint, method, headers, bodyTemplate }
+  internalHandler String? // For internal: built-in handler name
+  
+  // Settings
+  isActive    Boolean  @default(true)
+  timeout     Int      @default(10000) // Timeout in ms
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  tenantId    String?  // Optional for now to avoid breaking existing records
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id])
+  reference   String   @unique // Paystack Reference
+  amount      Int      // In kobo
+  currency    String   @default("NGN")
+  status      String   // INITIATED, SUCCESS, FAILED, ABANDONED
+  plan        String?
+  metadata    Json?
+  errorMessage String?
+
+  provider          String?  // stripe, paystack, paypal
+  providerReference String?  // ID from provider (e.g. pi_123, ch_123)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  paidAt      DateTime?
+
+  @@index([userId])
+  @@index([status])
+}
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  eventId     String   @unique // Stripe Event ID (evt_...)
+  type        String   // checkout.session.completed, etc.
+  provider    String   // stripe, paystack
+  status      String   // processing, success, failed
+  error       String?
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([eventId])
+}
+model Service {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  duration    Int?     // Duration in minutes
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+}

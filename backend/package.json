@@ -1,0 +1,55 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test-email-sendgrid": "node -e \"require('dotenv').config(); const sgMail=require('@sendgrid/mail'); sgMail.setApiKey(process.env.SENDGRID_API_KEY); const msg={to:'vincentagber74@gmail.com', from:process.env.EMAIL_FROM||'info@scriptishrx.com', subject:'SendGrid Test – ScriptishRx', html:'<p>This is a test email via SendGrid.</p>'}; sgMail.send(msg).then(()=>console.log('✅ SendGrid email sent')).catch(e=>console.error('❌ SendGrid error',e));\"",
+    "test": "jest",
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@sendgrid/mail": "^8.1.6",
+    "@supabase/supabase-js": "^2.86.0",
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "date-fns": "^2.30.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "googleapis": "^169.0.0",
+    "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "mulaw-js": "^1.0.1",
+    "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
+    "node-mailjet": "^6.0.11",
+    "nodemailer": "^7.0.12",
+    "nodemon": "^3.1.11",
+    "openai": "^6.10.0",
+    "pg": "^8.16.3",
+    "socket.io": "^4.8.1",
+    "stripe": "^20.1.0",
+    "twilio": "^5.10.7",
+    "wavefile": "^11.0.0",
+    "winston": "^3.19.0",
+    "ws": "^8.18.3",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "prisma": "^5.22.0",
+    "supertest": "^6.3.3"
+  }
+}

@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient({ datasources: { db: { url: process.env.DIRECT_URL } } }); async function test() { try { await prisma.$connect(); console.log('Successfully connected to DB via DIRECT_URL'); await prisma.$disconnect(); } catch (e) { console.error(e); process.exit(1); } } test();
