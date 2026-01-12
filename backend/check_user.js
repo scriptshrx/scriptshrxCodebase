@@ -18,7 +18,7 @@ async function main() {
                 passwordHash: user.password.substring(0, 10) + '...'
             });
         } else {
-            console.log('User NOT found: test@scriptishrx.com');
+            console.log('User not found: test@scriptishrx.com');
         }
 
         const tenants = await prisma.tenant.findMany();
