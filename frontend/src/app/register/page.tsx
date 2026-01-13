@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import axios from 'axios';
 
 export default function RegisterPage() {
     const [accountType, setAccountType] = useState<'ORGANIZATION' | 'INDIVIDUAL'>('ORGANIZATION');
@@ -20,7 +21,6 @@ export default function RegisterPage() {
         setIsLoading(true);
 
         try {
-            // Determine API URL: Use localhost:5000 for local dev, or relative path for production
             const apiUrl = process.env.NODE_ENV === 'development'
                 ? 'http://localhost:5000'
                 : (typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'));
@@ -33,24 +33,16 @@ export default function RegisterPage() {
                 companyName: accountType === 'ORGANIZATION' ? companyName : undefined,
             };
 
-            const res = await fetch(`${apiUrl}/api/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
+            const response = await axios.post('https://scriptshrxcodebase.onrender.com/register', payload);
 
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || 'Registration failed');
-            }
-
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+            console.log('Registration successful :', response.data);
 
             router.push('/dashboard');
         } catch (err: any) {
-            setError(err.message);
+            const message = err.response?.data?.error || err.message || 'Registration failed';
+            setError(message);
         } finally {
             setIsLoading(false);
         }
