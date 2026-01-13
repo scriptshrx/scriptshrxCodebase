@@ -46,6 +46,7 @@
     "wavefile": "^11.0.0",
     "winston": "^3.19.0",
     "ws": "^8.18.3",
+    "zeptomail": "^7.0.0",
     "zod": "^4.1.13"
   },
   "devDependencies": {

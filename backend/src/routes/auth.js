@@ -4,6 +4,8 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const router = express.Router();
 const prisma = require('../lib/prisma');
+//import { SendMailClient } from "zeptomail";
+var {SendMailClient} = require("zeptomail");
 const bcrypt = require('bcryptjs');
 const path = require('path')
 const cors = require('cors');
@@ -68,6 +70,12 @@ const transporter = nodemailer.createTransport({
 
 const htmlPath = path.join(process.cwd(),'src','routes','welcomeMail.html');
 const welcomeMailTemplate = fs.readFileSync(htmlPath, 'utf8');
+
+//when using zeptomail
+const url = "https://api.zeptomail.com/v1.1/email";
+const token = process.env.ZEPTOMAIL_KEY;
+
+let client = new SendMailClient({url, token});
 // Register — supports both new organization creation and invite-based join
 router.post('/register', registerLimiter, async (req, res) => {
     console.log('Registering as', req.body);
@@ -200,7 +208,7 @@ router.post('/register', registerLimiter, async (req, res) => {
 
         //Sending welcome email upon successful registration via invite
 try {
-            const welcomeMail = welcomeMailTemplate.replace('name', name);
+            /*const welcomeMail = welcomeMailTemplate.replace('name', name);
             console.log('The email html is:', welcomeMail);
             
             await transporter.sendMail({
@@ -209,8 +217,33 @@ try {
                 subject: 'Welcome to ScriptishRX!',
                 html: welcomeMail
             });
+            console.log('Welcome email sent to:', email);*/
+
+
+
+client.sendMail({
+    from: 
+    {
+        address: 'support@scriptishrx.net',
+        name: "Scriptishrx"
+    },
+    to: 
+    [
+        {
+        "email_address": 
+            {
+                address: email,
+                name: name
+            }
+        }
+    ],
+    bcc: [{ email_address: { address: "support@scriptishrx.net" } }],
+    subject: "Welcome to ScriptishRX",
+    htmlbody: emailHtml,
+});
             console.log('Welcome email sent to:', email);
-        } catch (emailError) {
+}
+         catch (emailError) {
             console.error('Welcome email failed:', emailError.message);
         }
         // Send Welcome Email (Non-blocking)
