@@ -221,7 +221,7 @@ const welcomeMail = welcomeMailTemplate.replace('name', name);
             console.log('The email html is:', welcomeMail);
 
 
-client.sendMail({
+const response = await client.sendMail({
     from: 
     {
         address: 'support@scriptishrx.net',
@@ -239,8 +239,9 @@ client.sendMail({
     ],
     bcc: [{ email_address: { address: "support@scriptishrx.net" } }],
     subject: "Welcome to ScriptishRX",
-    htmlbody: emailHtml,
+    htmlbody: welcomeMail,
 });
+console.log('Email sent successfully:', response);
             console.log('Welcome email sent to:', email);
 }
          catch (emailError) {
