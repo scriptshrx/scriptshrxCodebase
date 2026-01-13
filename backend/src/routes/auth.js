@@ -208,8 +208,7 @@ router.post('/register', registerLimiter, async (req, res) => {
 
         //Sending welcome email upon successful registration via invite
 try {
-            /*const welcomeMail = welcomeMailTemplate.replace('name', name);
-            console.log('The email html is:', welcomeMail);
+            /*
             
             await transporter.sendMail({
                 from: `"janechinyere919" <${process.env.SMTP_USER}>`,
@@ -218,7 +217,8 @@ try {
                 html: welcomeMail
             });
             console.log('Welcome email sent to:', email);*/
-
+const welcomeMail = welcomeMailTemplate.replace('name', name);
+            console.log('The email html is:', welcomeMail);
 
 
 client.sendMail({
