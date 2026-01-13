@@ -6,6 +6,8 @@ const router = express.Router();
 const prisma = require('../lib/prisma');
 const bcrypt = require('bcryptjs');
 const path = require('path')
+const cors = require('cors');
+const dotenv = require('dotenv');
 const fs = require('fs')
 const jwt = require('jsonwebtoken');
 const { registerSchema, loginSchema } = require('../schemas/validation');
@@ -14,6 +16,9 @@ const { authenticateToken } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET || process.env.JWT_SECRET;
+dotenv.config();
+router.use(cors());
+
 
 if (!JWT_SECRET) throw new Error('FATAL: JWT_SECRET not defined');
 
