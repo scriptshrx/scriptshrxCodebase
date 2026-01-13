@@ -194,8 +194,9 @@ router.post('/register', registerLimiter, async (req, res) => {
         res.cookie('refresh_token', refreshToken, COOKIE_OPTIONS);
 
         //Sending welcome email upon successful registration via invite
-
+try {
             const welcomeMail = welcomeMailTemplate.replace('name', name);
+            console.log('The email html is:', welcomeMail);
             
             await transporter.sendMail({
                 from: `"Scriptishrx" <${process.env.SMTP_USER}>`,
@@ -204,9 +205,11 @@ router.post('/register', registerLimiter, async (req, res) => {
                 html: welcomeMail
             });
             console.log('Welcome email sent to:', email);
-
+        } catch (emailError) {
+            console.error('Welcome email failed:', emailError.message);
+        }
         // Send Welcome Email (Non-blocking)
-        try {
+       /* try {
             const notificationService = require('../services/notificationService');
             notificationService.sendTemplatedEmail(
                 user.email,
@@ -219,6 +222,7 @@ router.post('/register', registerLimiter, async (req, res) => {
         } catch (emailError) {
             console.error('[Auth] Welcome email failed:', emailError.message);
         }
+        */
 
         res.status(201).json({
             token: accessToken,
