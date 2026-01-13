@@ -31,7 +31,7 @@ export const Hero = () => {
                             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-sm font-medium text-primary-start"
                         >
                             <Star className="w-4 h-4 fill-primary-start" />
-                            <span>#1 AI Business Operations Platform • 99% Satisfaction</span>
+                            <span>Best AI Business Operations Platform • 99% Satisfaction</span>
                         </motion.div>
 
                         <motion.h1

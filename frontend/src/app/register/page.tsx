@@ -33,7 +33,7 @@ export default function RegisterPage() {
                 companyName: accountType === 'ORGANIZATION' ? companyName : undefined,
             };
 
-            const response = await axios.post('https://scriptshrxcodebase.onrender.com/register', payload);
+            const response = await axios.post('https://scriptshrxcodebase.onrender.com/api/auth/register', payload);
 
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
