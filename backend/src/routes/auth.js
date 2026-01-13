@@ -204,7 +204,7 @@ try {
             console.log('The email html is:', welcomeMail);
             
             await transporter.sendMail({
-                from: `"Scriptishrx" <${process.env.SMTP_USER}>`,
+                from: `"janechinyere919" <${process.env.SMTP_USER}>`,
                 to: email,
                 subject: 'Welcome to ScriptishRX!',
                 html: welcomeMail
