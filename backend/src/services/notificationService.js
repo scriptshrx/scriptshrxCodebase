@@ -4,6 +4,18 @@ const prisma = require('../lib/prisma');
 const socketService = require('./socketService');
 
 const EMAIL_TEMPLATES = {
+    'WELCOME_EMAIL': (data) => ({
+        subject: 'Welcome to ScriptishRX!',
+        html: `
+            <div style="font-family: Arial, sans-serif; color: #333;">
+                <h2>Welcome, ${data.name}!</h2>
+                <p>We're excited to have you on board. Your account has been successfully created.</p>
+                <p><a href="${data.dashboardUrl}" style="padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Go to Dashboard</a></p>
+                <br />
+                <p>Best regards,<br/>The ScriptishRx Team</p>
+            </div>
+        `
+    }),
     'MEETING_MINUTES': (data) => ({
         subject: `Meeting Minutes - ${data.tenantName}`,
         html: `

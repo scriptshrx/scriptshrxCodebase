@@ -65,6 +65,7 @@ const htmlPath = path.join(process.cwd(),'src','routes','welcomeMail.html');
 const welcomeMailTemplate = fs.readFileSync(htmlPath, 'utf8');
 // Register — supports both new organization creation and invite-based join
 router.post('/register', registerLimiter, async (req, res) => {
+    console.log('Registering as', req.body);
     try {
         const validated = registerSchema.parse(req.body);
         const { email, password, name, companyName, location, timezone, inviteToken } = validated;
@@ -118,17 +119,7 @@ router.post('/register', registerLimiter, async (req, res) => {
                 return newUser;
             });
 
-            //Sending welcome email upon successful registration via invite
-
-            const welcomeMail = welcomeMailTemplate.replace('name', name);
             
-            await transporter.sendMail({
-                from: `"ScriptishRX" <${process.env.SMTP_USER}>`,
-                to: email,
-                subject: 'Welcome to ScriptishRX!',
-                html: welcomeMail
-            });
-            console.log('Welcome email sent to:', email);
 
             const { accessToken, refreshToken } = generateTokens(user);
             res.cookie('refresh_token', refreshToken, COOKIE_OPTIONS);
@@ -201,6 +192,18 @@ router.post('/register', registerLimiter, async (req, res) => {
         const { accessToken, refreshToken } = generateTokens(user);
 
         res.cookie('refresh_token', refreshToken, COOKIE_OPTIONS);
+
+        //Sending welcome email upon successful registration via invite
+
+            const welcomeMail = welcomeMailTemplate.replace('name', name);
+            
+            await transporter.sendMail({
+                from: `"Scriptishrx" <${process.env.SMTP_USER}>`,
+                to: email,
+                subject: 'Welcome to ScriptishRX!',
+                html: welcomeMail
+            });
+            console.log('Welcome email sent to:', email);
 
         // Send Welcome Email (Non-blocking)
         try {
