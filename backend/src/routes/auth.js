@@ -61,7 +61,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-const htmlPath = path.join(process.cwd(),'welcomeMail.html');
+const htmlPath = path.join(process.cwd(),'src','routes','welcomeMail.html');
 const welcomeMailTemplate = fs.readFileSync(htmlPath, 'utf8');
 // Register — supports both new organization creation and invite-based join
 router.post('/register', registerLimiter, async (req, res) => {
