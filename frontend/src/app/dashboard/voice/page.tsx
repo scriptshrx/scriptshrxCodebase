@@ -278,15 +278,22 @@ export default function VoicePage() {
                 })
             });
             
-            const data = await res.json();
+            let data;
+            try {
+                data = await res.json();
+            } catch (parseError) {
+                console.error('Failed to parse response:', parseError);
+                alert(`Server error (${res.status}): Unable to parse response`);
+                return;
+            }
             
             if (res.ok) {
                 alert('AI Agent configuration saved successfully!');
             } else {
-                alert(data.error || 'Failed to save configuration');
+                alert(data.error || `Failed to save configuration (${res.status})`);
             }
         } catch (error: any) {
-            console.error('Error saving config:', error.message);
+            console.error('Error saving config:', error);
             alert(error.message || 'Error saving configuration');
         } finally {
             setIsSaving(false);
