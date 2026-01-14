@@ -25,7 +25,11 @@ class TwilioService {
         }
 
         if (!accountSid) {
-            throw new Error('Twilio Account SID not found.');
+            throw new Error(
+                'Twilio Account SID not found. Please configure:\n' +
+                '  1. Set TWILIO_ACCOUNT_SID in environment variables, OR\n' +
+                '  2. Configure twilioConfig in the tenant settings via the organization API'
+            );
         }
 
         let client;
@@ -34,7 +38,11 @@ class TwilioService {
         } else if (authToken) {
             client = twilio(accountSid, authToken);
         } else {
-            throw new Error('Twilio credentials missing.');
+            throw new Error(
+                'Twilio credentials incomplete. Please provide either:\n' +
+                '  1. TWILIO_API_KEY_SID + TWILIO_API_KEY_SECRET, OR\n' +
+                '  2. TWILIO_AUTH_TOKEN'
+            );
         }
 
         return {
@@ -75,6 +83,11 @@ class TwilioService {
     async makeCall(tenantId, to, script, customData = {}) {
         try {
             const { client, phoneNumber } = await this.getClientForTenant(tenantId);
+            
+            if (!phoneNumber) {
+                throw new Error('No Twilio phone number configured for this tenant or globally.');
+            }
+
             // Add tenantId to the webhook so the voice stream knows the context
             const webhookUrl = `${process.env.APP_URL}/api/twilio/webhook/voice/outbound?tenantId=${tenantId}`;
 

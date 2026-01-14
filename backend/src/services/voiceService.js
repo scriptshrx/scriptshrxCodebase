@@ -544,10 +544,22 @@ class VoiceService {
             };
         } catch (error) {
             console.error('[VoiceService] Outbound call error:', error);
+            
+            // Check if it's a Twilio configuration error
+            const errorMessage = error.message || 'Failed to initiate call';
+            const isTwilioConfigError = errorMessage.includes('TWILIO') || 
+                                       errorMessage.includes('Twilio') ||
+                                       errorMessage.includes('credentials') ||
+                                       errorMessage.includes('Account SID') ||
+                                       errorMessage.includes('phone number');
+            
             return {
                 success: false,
-                error: error.message || 'Failed to initiate call',
-                message: error.message
+                error: isTwilioConfigError ? 
+                    'Twilio is not properly configured. Contact administrator.' :
+                    errorMessage,
+                details: errorMessage,
+                message: errorMessage
             };
         }
     }
