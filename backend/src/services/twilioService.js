@@ -88,8 +88,18 @@ class TwilioService {
                 throw new Error('No Twilio phone number configured for this tenant or globally.');
             }
 
+            // Get APP_URL from environment
+            const appUrl = process.env.APP_URL;
+            if (!appUrl) {
+                throw new Error(
+                    'APP_URL environment variable not set. ' +
+                    'Please configure APP_URL on Render (e.g., https://your-app.onrender.com). ' +
+                    'Twilio needs this to send webhooks to your backend.'
+                );
+            }
+
             // Add tenantId to the webhook so the voice stream knows the context
-            const webhookUrl = `${process.env.APP_URL}/api/twilio/webhook/voice/outbound?tenantId=${tenantId}`;
+            const webhookUrl = `${appUrl}/api/twilio/webhook/voice/outbound?tenantId=${tenantId}`;
 
             const call = await client.calls.create({
                 url: `${webhookUrl}&script=${encodeURIComponent(script)}`,

@@ -37,11 +37,8 @@ class AuditService {
             // Don't block on audit logging
             setImmediate(async () => {
                 try {
-                    // Use the raw prisma client to avoid infinite loops with extensions
-                    const { PrismaClient } = require('@prisma/client');
-                    const rawPrisma = new PrismaClient();
-
-                    await rawPrisma.auditLog.create({
+                    // Use the shared prisma client
+                    await prisma.auditLog.create({
                         data: {
                             tenantId,
                             userId,
@@ -55,8 +52,6 @@ class AuditService {
                             createdAt: new Date()
                         }
                     });
-
-                    await rawPrisma.$disconnect();
                 } catch (innerError) {
                     console.error('[AuditService] Failed to write audit log:', innerError.message);
                 }
