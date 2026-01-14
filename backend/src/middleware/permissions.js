@@ -74,6 +74,14 @@ function checkPermission(resource, action) {
                 });
             }
 
+            // DEBUG: Log resolved role and permissions for troubleshooting
+            try {
+                const debugPerms = assignedPermissions.map(p => `${p.resource}:${p.action}`).slice(0,50);
+                console.log('[RBAC DEBUG] userId=', userId, 'effectiveRole=', effectiveRoleName, 'assignedPermissionsSample=', debugPerms);
+            } catch (e) {
+                console.log('[RBAC DEBUG] failed to stringify permissions', e);
+            }
+
             // 2. Check Permission Matches
             // Permission is granted if:
             // - The user has a permission for the resource with matching action
