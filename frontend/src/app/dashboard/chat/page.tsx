@@ -96,14 +96,15 @@ export default function ChatPage() {
                 })
             });
 
+            const data = await res.json();
             if (res.ok) {
                 alert('Chat Agent configuration saved successfully!');
             } else {
-                alert('Failed to save configuration');
+                alert(data.error || 'Failed to save configuration');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving config:', error);
-            alert('Error saving configuration');
+            alert(error.message || 'Error saving configuration');
         } finally {
             setIsSaving(false);
         }

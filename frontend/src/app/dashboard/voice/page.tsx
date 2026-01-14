@@ -246,6 +246,20 @@ export default function VoicePage() {
     };
 
     const handleSaveConfig = async () => {
+        // Validation: Ensure all required fields are filled
+        if (!aiConfig.aiName || !aiConfig.aiName.trim()) {
+            alert('Agent Name is required');
+            return;
+        }
+        if (!aiConfig.welcomeMessage || !aiConfig.welcomeMessage.trim()) {
+            alert('Welcome Message is required');
+            return;
+        }
+        if (!aiConfig.customSystemPrompt || !aiConfig.customSystemPrompt.trim()) {
+            alert('System Instructions are required');
+            return;
+        }
+
         setIsSaving(true);
         try {
             const res = await fetch('https://scriptshrxcodebase.onrender.com/api/organization/info', {
@@ -263,14 +277,17 @@ export default function VoicePage() {
                     }
                 })
             });
+            
+            const data = await res.json();
+            
             if (res.ok) {
                 alert('AI Agent configuration saved successfully!');
             } else {
-                alert('Failed to save configuration');
+                alert(data.error || 'Failed to save configuration');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving config:', error.message);
-            alert('Error saving configuration');
+            alert(error.message || 'Error saving configuration');
         } finally {
             setIsSaving(false);
         }

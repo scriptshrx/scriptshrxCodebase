@@ -277,7 +277,7 @@ console.log('Email sent successfully:', response);
 
 // Login — NOW WORKS WITH TWILIO
 router.post('/login', authLimiter, async (req, res) => {
-    console.log(`User: ${req.email} logging back in`)
+    console.log(`User: ${loginSchema.safeParse(req.body).data.email} logging back in`)
     try {
         const result = loginSchema.safeParse(req.body);
         if (!result.success) return res.status(400).json({ error: result.error.errors[0].message });
