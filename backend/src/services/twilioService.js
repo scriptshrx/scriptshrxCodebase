@@ -139,6 +139,21 @@ class TwilioService {
                 });
                 if (tenant) {
                     logger.info('Tenant identified', { tenantId: tenant.id, name: tenant.name });
+                    
+                    // Save inbound call to database
+                    try {
+                        await prisma.inboundCall.create({
+                            data: {
+                                tenantId: tenant.id,
+                                callerPhone: From,
+                                callSid: CallSid,
+                                status: 'completed'
+                            }
+                        });
+                        logger.info('Inbound call recorded', { tenantId: tenant.id, from: From, callSid: CallSid });
+                    } catch (dbErr) {
+                        logger.error('Error saving inbound call', { error: dbErr.message });
+                    }
                 } else {
                     logger.warn('No tenant found for number', { To });
                 }

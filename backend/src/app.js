@@ -155,6 +155,7 @@ app.use('/api/marketing', marketingRouter);
 app.use('/api/organization', organizationRouter);
 app.use('/api/services', servicesRouter);
 app.use('/api/leads', require('./routes/leads'));
+app.use('/api/inbound-calls', require('./routes/inbound-calls'));
 
 // Enterprise Features: Audit Logs (SOC2)
 app.use('/api/audit-logs', require('./routes/audit'));
