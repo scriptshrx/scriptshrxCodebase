@@ -85,7 +85,7 @@ export default function VoicePage() {
         if (typeof window !== 'undefined') {
             const origin = window.location.origin;
             if (origin.includes('localhost')) {
-                setWebhookUrl('https://scriptishrx.net/api/twilio/webhook/voice');
+                setWebhookUrl('https://scriptshrxcodebase.onrender.com/api/twilio/webhook/voice');
             } else {
                 setWebhookUrl(`${origin}/api/twilio/webhook/voice`);
             }
