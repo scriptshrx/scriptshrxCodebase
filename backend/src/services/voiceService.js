@@ -488,6 +488,87 @@ class VoiceService {
             console.error('[VoiceService] Failed to save message:', error);
         }
     }
+
+    /**
+     * Initiate an outbound call via Twilio
+     */
+    async initiateOutboundCall(phoneNumber, tenantId, customData = {}) {
+        try {
+            const twilioService = require('./twilioService');
+            
+            // Get tenant config for greeting/script
+            const tenant = await prisma.tenant.findUnique({
+                where: { id: tenantId },
+                select: { 
+                    name: true, 
+                    aiName: true, 
+                    aiWelcomeMessage: true,
+                    customSystemPrompt: true,
+                    timezone: true
+                }
+            });
+
+            if (!tenant) {
+                return {
+                    success: false,
+                    error: 'Tenant not found'
+                };
+            }
+
+            // Build greeting/script
+            const greeting = this.getGreeting(tenant.aiName || tenant.name, tenant.timezone);
+            const script = tenant.aiWelcomeMessage || greeting;
+
+            // Make the call via Twilio
+            const call = await twilioService.makeCall(tenantId, phoneNumber, script, customData);
+
+            // Store call session in database
+            const callSession = await prisma.callSession.create({
+                data: {
+                    tenantId,
+                    callSid: call.sid,
+                    callerPhone: phoneNumber,
+                    status: 'initiated',
+                    direction: 'outbound',
+                    startedAt: new Date()
+                }
+            });
+
+            return {
+                success: true,
+                message: 'Call initiated successfully',
+                callId: call.sid,
+                sessionId: callSession.id,
+                status: 'initiated',
+                provider: 'twilio'
+            };
+        } catch (error) {
+            console.error('[VoiceService] Outbound call error:', error);
+            return {
+                success: false,
+                error: error.message || 'Failed to initiate call',
+                message: error.message
+            };
+        }
+    }
+
+    /**
+     * Get call status
+     */
+    async getCallStatus(callId, tenantId) {
+        try {
+            const callSession = await prisma.callSession.findFirst({
+                where: {
+                    callSid: callId,
+                    tenantId
+                }
+            });
+            return callSession;
+        } catch (error) {
+            console.error('[VoiceService] Error fetching call status:', error);
+            return null;
+        }
+    }
 }
 
 module.exports = new VoiceService();
