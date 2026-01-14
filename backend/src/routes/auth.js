@@ -31,7 +31,7 @@ const COOKIE_OPTIONS = {
     maxAge: 7 * 24 * 60 * 60 * 1000
 };
 
-//Include tenantId in BOTH access & refresh tokens
+//Include tenantId in BOTH access & refresh token
 const generateTokens = (user) => {
     const accessToken = jwt.sign(
         {
