@@ -248,7 +248,7 @@ export default function VoicePage() {
     const handleSaveConfig = async () => {
         setIsSaving(true);
         try {
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/organization/info`, {
+            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/organization/info', {
                 method: 'PATCH',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -269,7 +269,7 @@ export default function VoicePage() {
                 alert('Failed to save configuration');
             }
         } catch (error) {
-            console.error('Error saving config:', error);
+            console.error('Error saving config:', error.message);
             alert('Error saving configuration');
         } finally {
             setIsSaving(false);

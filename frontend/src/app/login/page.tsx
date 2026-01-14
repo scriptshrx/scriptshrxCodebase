@@ -17,7 +17,7 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            // Determine API URL: Use localhost:5000 for local dev, or relative path for production
+            // Determine API URL: Use localhost:5000 for next local dev, or relative path for production
             const apiUrl = process.env.NODE_ENV === 'development'
                 ? 'http://localhost:5000'
                 : (typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'));
