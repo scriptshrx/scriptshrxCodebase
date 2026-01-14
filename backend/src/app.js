@@ -236,6 +236,20 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+
+//UptimeRobot
+app.get("/keep/render/awake", async (req, res) => {
+  console.log("Keep Render awake cron job GET request successful");
+  const source = req.headers["user-agent"].includes("UptimeRobot")
+    ? "UptimeRobot/2.0"
+    : "Github cron job";
+  count++;
+
+  console.log("Number of times pinged since last deployment:", count);
+
+  console.log("Pinged by:", source);
+  res.status(200).send("OK");
+});
 // Serve Frontend Static Files (SPA)
 const publicPath = path.join(__dirname, '../public');
 if (fs.existsSync(publicPath)) {
