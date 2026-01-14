@@ -17,22 +17,24 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            // Determine API URL: Use localhost:5000 for next local dev, or relative path for production
-            const apiUrl = process.env.NODE_ENV === 'development'
-                ? 'http://localhost:5000'
-                : (typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'));
-
-            const res = await fetch(`${apiUrl}/api/auth/login`, {
+            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
+
+            // Check if response has content before parsing JSON
+            const contentType = res.headers.get('content-type');
+            if (!contentType?.includes('application/json')) {
+                throw new Error('Server returned invalid response');
+            }
 
             const data = await res.json();
 
             if (!res.ok) {
                 throw new Error(data.error || 'Login failed');
             }
+            console.log('Login successful for:', data.user);
 
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
