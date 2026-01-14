@@ -10,6 +10,17 @@ const prismaClient = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
 });
 
+// Add event listeners for connection issues
+prismaClient.$on('beforeDisconnect', () => {
+    console.log('[Prisma] Preparing to disconnect');
+});
+
+prismaClient.$on('error', (error) => {
+    if (error.message?.includes('prepared statement')) {
+        console.error('[Prisma] Prepared statement error detected:', error.message);
+    }
+});
+
 // Extend Prisma with RLS (Row Level Security) using modern Client Extensions
 const prisma = prismaClient.$extends({
     query: {

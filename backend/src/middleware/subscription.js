@@ -40,10 +40,25 @@ const checkEntitlement = (feature) => {
             if (!tenantId) return res.status(401).json({ error: 'Tenant context required' });
 
             // 1. Fetch Tenant Subscription
-            const tenant = await prisma.tenant.findUnique({
-                where: { id: tenantId },
-                include: { subscriptionPlan: true }
-            });
+            let tenant;
+            try {
+                tenant = await prisma.tenant.findUnique({
+                    where: { id: tenantId },
+                    include: { subscriptionPlan: true }
+                });
+            } catch (dbError) {
+                console.error('[Entitlement] Database query failed:', dbError.message);
+                // If it's a prepared statement error, try once more
+                if (dbError.message?.includes('prepared statement')) {
+                    console.log('[Entitlement] Retrying tenant lookup after prepared statement error...');
+                    tenant = await prisma.tenant.findUnique({
+                        where: { id: tenantId },
+                        include: { subscriptionPlan: true }
+                    });
+                } else {
+                    throw dbError;
+                }
+            }
 
             if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
 
