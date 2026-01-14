@@ -52,7 +52,8 @@ app.use(cors({
         process.env.FRONTEND_URL
     ].filter(Boolean),
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    // Include PATCH and HEAD so browser preflight permits all common request types
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id']
 }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
