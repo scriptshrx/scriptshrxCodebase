@@ -71,7 +71,7 @@ export default function VoicePage() {
         console.log('[Voice Config] Token present:', !!token);
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
-            console.log('[Voice Config] Authorization header set');
+            console.log('[Voice Config] Authorization headers set');
         } else {
             console.warn('[Voice Config] No token found - request will fail');
         }
