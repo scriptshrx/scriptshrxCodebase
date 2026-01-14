@@ -561,7 +561,7 @@ export default function VoicePage() {
                                     <div className="space-y-2">
                                         <label className="text-sm font-semibold text-gray-800">Your Phone Number</label>
                                         <Input
-                                            placeholder="+1 234 567 8900"
+                                            placeholder="+2349036202766 (include + and country code)"
                                             value={phoneNumber}
                                             onChange={(e) => setPhoneNumber(e.target.value)}
                                             className="h-11 bg-gray-50 border border-gray-300 text-gray-900 placeholder:text-gray-400 focus-visible:ring-green-500 rounded-xl px-4"

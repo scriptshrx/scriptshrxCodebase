@@ -87,14 +87,13 @@ router.post(
             }
 
             const tenantId = req.scopedTenantId;
-            const cleanPhone = phoneNumber.replace(/[\s()-]/g, '');
 
             console.log(
-                `[Voice] Initiating Twilio call to ${cleanPhone} for tenant ${tenantId}`
+                `[Voice] Initiating Twilio call to ${phoneNumber} for tenant ${tenantId}`
             );
 
             const result = await voiceService.initiateOutboundCall(
-                cleanPhone,
+                phoneNumber,
                 tenantId,
                 customData || {}
             );
