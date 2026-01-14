@@ -22,11 +22,15 @@ const prisma = prismaClient.$extends({
                     'Notification', 'Transaction'
                 ];
 
+                // SKIP extension for models not in tenantModels to avoid prepared statement issues
+                if (!tenantModels.includes(model)) {
+                    return query(args);
+                }
+
                 const tenantId = context.getTenantId();
                 const userId = context.getUserId();
 
                 // Only filter tenant-scoped models when tenantId is available
-                // NOTE: We skip findUnique for non-tenant models (like User) to avoid prepared statement conflicts
                 if (
                     tenantId &&
                     tenantModels.includes(model) &&
