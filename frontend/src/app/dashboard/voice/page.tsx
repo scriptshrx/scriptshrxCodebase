@@ -456,7 +456,7 @@ export default function VoicePage() {
                                             value={aiConfig.aiName}
                                             onChange={(e) => setAiConfig({ ...aiConfig, aiName: e.target.value })}
                                             placeholder="e.g. Sarah from Front Desk"
-                                            className="bg-white border-gray-300 text-gray-900"
+                                            className="bg-white border border-gray-300 text-gray-900"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -478,7 +478,7 @@ export default function VoicePage() {
                                         value={aiConfig.welcomeMessage}
                                         onChange={(e) => setAiConfig({ ...aiConfig, welcomeMessage: e.target.value })}
                                         placeholder="e.g. Thanks for calling ScriptishRx. How can I help?"
-                                        className="bg-white border-gray-300 text-gray-900"
+                                        className="bg-white border border-gray-300 text-gray-900"
                                     />
                                 </div>
 
