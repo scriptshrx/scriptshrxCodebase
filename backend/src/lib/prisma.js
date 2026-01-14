@@ -26,21 +26,17 @@ const prisma = prismaClient.$extends({
                 const userId = context.getUserId();
 
                 // Only filter tenant-scoped models when tenantId is available
+                // NOTE: We skip findUnique for non-tenant models (like User) to avoid prepared statement conflicts
                 if (
                     tenantId &&
                     tenantModels.includes(model) &&
-                    ['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy'].includes(operation)
+                    ['findMany', 'findFirst', 'count', 'aggregate', 'groupBy'].includes(operation)
                 ) {
                     if (!args.where) args.where = {};
 
                     // If tenantId is not already explicitly set, inject it
                     if (args.where.tenantId === undefined) {
                         args.where.tenantId = tenantId;
-                    }
-
-                    // Special handling for findUnique - convert to findFirst to allow tenantId filter
-                    if (operation === 'findUnique') {
-                        operation = 'findFirst';
                     }
 
                     // Workflow privacy: enforce owner access
