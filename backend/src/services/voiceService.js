@@ -73,15 +73,32 @@ class VoiceService {
                 const calledNumber = url.searchParams.get('To');
 
                 let t = await prisma.tenant.findFirst({
-                    where: calledNumber ? { phoneNumber: calledNumber } : {}
+                    where: calledNumber ? { phoneNumber: calledNumber } : {},
+                    select: {
+                        id: true,
+                        name: true,
+                        aiName: true,
+                        aiWelcomeMessage: true,
+                        customSystemPrompt: true,
+                        timezone: true
+                    }
                 });
 
-                if (!t) t = await prisma.tenant.findFirst() || { id: 'fallback', name: 'Our Business' };
-                console.log(`[VoiceService] Tenant identified: ${t.name}`);
+                if (!t) t = await prisma.tenant.findFirst({
+                    select: {
+                        id: true,
+                        name: true,
+                        aiName: true,
+                        aiWelcomeMessage: true,
+                        customSystemPrompt: true,
+                        timezone: true
+                    }
+                }) || { id: 'fallback', name: 'Our Business', aiName: 'AI Assistant' };
+                console.log(`[VoiceService] Tenant identified: ${t.name} (AI: ${t.aiName})`);
                 return t;
             } catch (err) {
                 console.error('Tenant lookup error:', err);
-                return { id: 'fallback', name: 'Fallback Business' };
+                return { id: 'fallback', name: 'Fallback Business', aiName: 'AI Assistant' };
             }
         })();
 
@@ -202,7 +219,8 @@ class VoiceService {
 
         // 1. Get the dynamic company name from the session tenant
         const tenant = session.tenant;
-        // CRITICAL FIX: Ensure 'name' is prioritized if 'companyName' doesn't exist in DB
+        // Use aiName if available, otherwise fall back to company name
+        const aiName = tenant?.aiName || tenant?.name || 'our office';
         const companyName = tenant?.name || tenant?.companyName || 'our office';
 
         let pricing = 'Pricing is available upon request.';
@@ -210,9 +228,9 @@ class VoiceService {
             pricing = await this.getPricingContext(tenant.id);
         }
 
-        // 2. Build the System Prompt using the dynamic business name
+        // 2. Build the System Prompt using the dynamic business name and AI name
         const systemPrompt = `
-    You are a professional AI voice assistant for ${companyName}.
+    You are a professional AI voice assistant named ${aiName} for ${companyName}.
     Your goal is to assist callers with questions and booking.
     
     **Mission:**
@@ -286,7 +304,7 @@ class VoiceService {
             // Send greeting after a short delay
             setTimeout(() => {
                 if (openAiWs.readyState === WebSocket.OPEN) {
-                    const personalizedGreeting = this.getGreeting(companyName, tenant?.timezone);
+                    const personalizedGreeting = this.getGreeting(aiName, tenant?.timezone);
                     console.log('[VoiceService] Sending greeting:', personalizedGreeting);
                     openAiWs.send(JSON.stringify({
                         type: 'response.create',
