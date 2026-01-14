@@ -238,6 +238,7 @@ app.get('/api/health', (req, res) => {
 
 
 //UptimeRobot
+let count = 0;
 app.get("/keep/render/awake", async (req, res) => {
   console.log("Keep Render awake cron job GET request successful");
   const source = req.headers["user-agent"].includes("UptimeRobot")
