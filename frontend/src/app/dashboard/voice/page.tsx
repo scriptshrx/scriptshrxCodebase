@@ -68,7 +68,13 @@ export default function VoicePage() {
     const getHeaders = () => {
         const headers: HeadersInit = { 'Content-Type': 'application/json' };
         const token = getToken();
-        if (token) headers['Authorization'] = `Bearer ${token}`;
+        console.log('[Voice Config] Token present:', !!token);
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+            console.log('[Voice Config] Authorization header set');
+        } else {
+            console.warn('[Voice Config] No token found - request will fail');
+        }
         return headers;
     };
 
@@ -262,6 +268,9 @@ export default function VoicePage() {
 
         setIsSaving(true);
         try {
+            console.log('[Voice Config] Sending PATCH request to /api/organization/info');
+            console.log('[Voice Config] Payload:', { aiName: aiConfig.aiName, welcomeMessage: aiConfig.welcomeMessage, systemPrompt: aiConfig.customSystemPrompt });
+            
             const res = await fetch('https://scriptshrxcodebase.onrender.com/api/organization/info', {
                 method: 'PATCH',
                 headers: getHeaders(),
@@ -278,11 +287,14 @@ export default function VoicePage() {
                 })
             });
             
+            console.log('[Voice Config] Response status:', res.status);
+            
             let data;
             try {
                 data = await res.json();
+                console.log('[Voice Config] Response data:', data);
             } catch (parseError) {
-                console.error('Failed to parse response:', parseError);
+                console.error('[Voice Config] Failed to parse response:', parseError);
                 alert(`Server error (${res.status}): Unable to parse response`);
                 return;
             }
@@ -293,7 +305,9 @@ export default function VoicePage() {
                 alert(data.error || `Failed to save configuration (${res.status})`);
             }
         } catch (error: any) {
-            console.error('Error saving config:', error);
+            console.error('[Voice Config] Error saving config:', error);
+            console.error('[Voice Config] Error type:', error.name);
+            console.error('[Voice Config] Error message:', error.message);
             alert(error.message || 'Error saving configuration');
         } finally {
             setIsSaving(false);
