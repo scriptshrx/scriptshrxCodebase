@@ -3,7 +3,9 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const router = express.Router();
-const prisma = require('../lib/prisma');
+const prismaDefault = require('../lib/prisma');
+// Use concurrent client for auth routes to avoid prepared statement conflicts
+const prisma = prismaDefault.concurrent || prismaDefault;
 //import { SendMailClient } from "zeptomail";
 var {SendMailClient} = require("zeptomail");
 const bcrypt = require('bcryptjs');

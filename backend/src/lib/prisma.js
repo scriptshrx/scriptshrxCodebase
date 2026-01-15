@@ -6,14 +6,34 @@ const context = require('./context');
 // Load env vars from root .env
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
+// Disable prepared statements for PgBouncer compatibility
+// statement_cache_size=0 prevents "prepared statement already exists" errors
+function getPrismaUrl() {
+    const url = process.env.DIRECT_URL || process.env.DATABASE_URL;
+    const separator = url.includes('?') ? '&' : '?';
+    return url.includes('statement_cache_size') ? url : `${url}${separator}statement_cache_size=0`;
+}
+
+const dbUrl = getPrismaUrl();
+
 const prismaClient = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    datasources: {
+        db: {
+            url: dbUrl
+        }
+    }
 });
 
 // Create a separate client for high-concurrency operations (voice, webhooks)
 // This bypasses the context extension to avoid prepared statement conflicts
 const prismaConcurrentClient = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    datasources: {
+        db: {
+            url: dbUrl
+        }
+    }
 });
 
 // Add event listeners for connection issues
