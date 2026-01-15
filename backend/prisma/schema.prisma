@@ -58,6 +58,7 @@ model Tenant {
   services         Service[]
 
   @@index([name])
+  @@map("tenants")
 }
 
 model TenantBranding {
@@ -76,6 +77,7 @@ model TenantBranding {
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  @@map("tenant_branding")
 }
 
 model SubscriptionPlan {
@@ -92,6 +94,7 @@ model SubscriptionPlan {
   tenants     Tenant[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  @@map("subscription_plans")
 }
 
 model User {
@@ -122,6 +125,7 @@ model User {
   @@index([tenantId])
   @@index([email])
   @@index([role])
+  @@map("users")
 }
 
 model Role {
@@ -133,6 +137,7 @@ model Role {
   permissions Permission[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  @@map("roles")
 }
 
 model Permission {
@@ -145,6 +150,7 @@ model Permission {
   updatedAt   DateTime @updatedAt
 
   @@unique([resource, action])
+  @@map("permissions")
 }
 
 model Client {
@@ -171,6 +177,7 @@ model Client {
   @@index([phone])
   @@index([email])
   @@index([leadScore]) // For sorting high-priority leads
+  @@map("clients")
 }
 
 model Booking {
@@ -190,6 +197,7 @@ model Booking {
   @@index([clientId])
   @@index([date])
   @@index([status])
+  @@map("bookings")
 }
 
 model MeetingMinute {
@@ -204,6 +212,7 @@ model MeetingMinute {
 
   @@index([tenantId])
   @@index([clientId])
+  @@map("meeting_minutes")
 }
 
 model Message {
@@ -222,6 +231,7 @@ model Message {
   @@index([sessionId])
   @@index([tenantId])
   @@index([callSessionId])
+  @@map("messages")
 }
 
 model CallSession {
@@ -249,6 +259,7 @@ model CallSession {
   @@index([clientId])
   @@index([callSid])
   @@index([callerPhone])
+  @@map("call_sessions")
 }
 
 model InboundCall {
@@ -269,6 +280,7 @@ model InboundCall {
   @@index([tenantId])
   @@index([callerPhone])
   @@index([createdAt])
+  @@map("inbound_calls")
 }
 
 model Subscription {
@@ -293,6 +305,7 @@ model Subscription {
   endDate          DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  @@map("subscriptions")
 }
 
 model Workflow {
@@ -307,6 +320,7 @@ model Workflow {
   updatedAt DateTime @updatedAt
 
   @@index([tenantId])
+  @@map("workflows")
 }
 
 model Notification {
@@ -321,6 +335,7 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@map("notifications")
 }
 
 model AuditLog {
@@ -343,6 +358,7 @@ model AuditLog {
   @@index([userId])
   @@index([model])
   @@index([createdAt])
+  @@map("audit_logs")
 }
 
 model Campaign {
@@ -358,6 +374,7 @@ model Campaign {
   updatedAt  DateTime @updatedAt
 
   @@index([tenantId])
+  @@map("campaigns")
 }
 
 model Invite {
@@ -375,6 +392,7 @@ model Invite {
   @@index([token])
   @@index([email])
   @@index([tenantId])
+  @@map("invites")
 }
 
 // Custom Function Calling Tools for Voice/Chat Agents
@@ -406,6 +424,7 @@ model CustomTool {
   @@unique([tenantId, name])
   @@index([tenantId])
   @@index([isActive])
+  @@map("custom_tools")
 }
 
 model Transaction {
@@ -431,6 +450,7 @@ model Transaction {
 
   @@index([userId])
   @@index([status])
+  @@map("transactions")
 }
 
 model WebhookEvent {
@@ -445,6 +465,7 @@ model WebhookEvent {
   updatedAt   DateTime @updatedAt
 
   @@index([eventId])
+  @@map("webhook_events")
 }
 model Service {
   id          String   @id @default(uuid())
@@ -460,4 +481,5 @@ model Service {
   updatedAt   DateTime @updatedAt
 
   @@index([tenantId])
+  @@map("services")
 }
