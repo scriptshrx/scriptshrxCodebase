@@ -9,7 +9,9 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 // Disable prepared statements for PgBouncer compatibility
 // statement_cache_size=0 prevents "prepared statement already exists" errors
 function getPrismaUrl() {
-    const url = process.env.DIRECT_URL || process.env.DATABASE_URL;
+    // Use DATABASE_URL (pooler) in production (Render)
+    // Use DIRECT_URL only for local Prisma commands (migrations)
+    const url = process.env.DATABASE_URL || process.env.DIRECT_URL;
     const separator = url.includes('?') ? '&' : '?';
     return url.includes('statement_cache_size') ? url : `${url}${separator}statement_cache_size=0`;
 }
