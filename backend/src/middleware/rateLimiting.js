@@ -8,13 +8,13 @@ const rateLimit = require('express-rate-limit');
 
 // Strict limiter for authentication endpoints
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: process.env.NODE_ENV === 'production' ? 5 : 40, // 40 attempts in dev, 5 in prod
+    windowMs: 60 * 1000, // 1 minute
+    max: process.env.NODE_ENV === 'production' ? 5 : 20, // 20 attempts in dev, 5 in prod
     message: {
         success: false,
         error: 'Too many login attempts. Please try again later.',
         code: 'RATE_LIMIT_EXCEEDED',
-        retryAfter: '15 minutes'
+        retryAfter: '1 minute'
     },
     standardHeaders: true,
     legacyHeaders: false,
