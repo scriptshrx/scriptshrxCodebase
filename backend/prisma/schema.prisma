@@ -18,15 +18,11 @@ model Tenant {
   phoneNumber      String? @unique
 
   // Customization & Subscription
-  plan             String  @default("Startup") // Startup, Growth, Enterprise
-  subscriptionPlanId String?
-  subscriptionPlan SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  plan             String  @default("Basic")
   
-  branding         TenantBranding?
-  
-  // Customization (Legacy - migrate to branding)
-  brandColor       String  @default("#000000") // Keep for backward compat
-  logoUrl          String? // Keep for backward compat
+  // Customization
+  brandColor       String  @default("#000000")
+  logoUrl          String?
 
   aiName           String  @default("ScriptishRx AI")
   aiWelcomeMessage String?
@@ -34,11 +30,8 @@ model Tenant {
   integrations     String?
 
   // Communication & AI Configuration
-  twilioConfig     Json?   // Stores: { accountSid, authToken, phoneNumber, voiceSettings: {...} }
-  aiConfig         Json?   // Stores: { model, temperature, systemPrompt, voiceId, welcomeMessage }
-  
-  // Deprecated (Migrate to aiConfig)
-  voiceCakeAgentId String? @ignore
+  twilioConfig     Json?
+  aiConfig         Json?
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -59,42 +52,6 @@ model Tenant {
 
   @@index([name])
   @@map("tenants")
-}
-
-model TenantBranding {
-  id          String   @id @default(uuid())
-  tenantId    String   @unique
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  
-  logoUrl     String?
-  faviconUrl  String?
-  primaryColor String  @default("#000000")
-  secondaryColor String?
-  fontFamily  String   @default("Inter")
-  portalTitle String?
-  
-  customCss   String?  // Enterprise only
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  @@map("tenant_branding")
-}
-
-model SubscriptionPlan {
-  id          String   @id @default(uuid())
-  name        String   @unique // Startup, Growth, Enterprise
-  price       Decimal  @db.Decimal(10, 2)
-  currency    String   @default("USD")
-  
-  // Entitlements
-  maxBookingsPerMonth Int? @default(50)
-  maxUsers            Int @default(1)
-  features            String[] // ["voice_agent", "advanced_analytics", "white_label"]
-  
-  tenants     Tenant[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  @@map("subscription_plans")
 }
 
 model User {
