@@ -257,27 +257,17 @@ model InboundCall {
 }
 
 model Subscription {
-  id               String   @id @default(uuid())
-  userId           String   @unique
-  user             User     @relation(fields: [userId], references: [id])
-  
-  // Core Fields
-  type             String   @default("INDIVIDUAL") // INDIVIDUAL, ORGANIZATION
-  plan             String?   // Legacy: Basic, Intermediate...
-  planId           String?   // New: startup_monthly, growth_yearly
-  stripeIds        Json?    // { customer: "cus_", subscription: "sub_" }
-  status           String   // active, trial, canceled, expired
-  billingCycle     String   @default("monthly") // monthly, yearly
-  
-  // Payment Links
-  stripeId         String?  // Legacy
-  paypalId         String?  // Legacy
-  paymentReference String?  // Active Payment Ref (Paystack/Stripe)
-  
-  startDate        DateTime @default(now())
-  endDate          DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  plan         String   @default("Trial")
+  status       String
+  stripeId     String?
+  paypalId     String?
+  startDate    DateTime @default(now())
+  endDate      DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   @@map("subscriptions")
 }
 
