@@ -142,9 +142,31 @@ class VoiceService {
                 remainder: Buffer.alloc(0),
                 pacer: null,
                 lastAudioAt: Date.now(),
+                callerPhone: msg.start.customParameters?.From,  // Store caller phone
+                callStartTime: Date.now(),
             };
 
             this.sessions.set(ws, session);
+            
+            // Save InboundCall to database
+            try {
+                const callerPhone = msg.start.customParameters?.From;
+                if (callerPhone && currentTenant.id !== 'fallback') {
+                    const inboundCall = await prisma.inboundCall.create({
+                        data: {
+                            tenantId: currentTenant.id,
+                            callerPhone,
+                            callSid: msg.start.customParameters?.CallSid,
+                            status: 'in_progress'
+                        }
+                    });
+                    console.log(`[VoiceService] InboundCall created: ${inboundCall.id} from ${callerPhone}`);
+                    session.inboundCallId = inboundCall.id;
+                }
+            } catch (err) {
+                console.error('[VoiceService] Failed to save InboundCall:', err.message);
+            }
+            
             this.connectToOpenAI(ws);
 
             // Emit real-time update to frontend
@@ -401,6 +423,22 @@ class VoiceService {
         if (session.pacer) clearInterval(session.pacer);
         if (session.openAiWs?.readyState === WebSocket.OPEN) {
             session.openAiWs.close();
+        }
+
+        // Update InboundCall record with duration
+        if (session.inboundCallId && session.callStartTime) {
+            try {
+                const duration = Math.floor((Date.now() - session.callStartTime) / 1000);
+                prisma.inboundCall.update({
+                    where: { id: session.inboundCallId },
+                    data: { 
+                        status: 'completed',
+                        duration
+                    }
+                }).catch(err => console.error('[VoiceService] Failed to update InboundCall:', err.message));
+            } catch (err) {
+                console.error('[VoiceService] Error finalizing InboundCall:', err.message);
+            }
         }
 
         // Emit real-time update to frontend

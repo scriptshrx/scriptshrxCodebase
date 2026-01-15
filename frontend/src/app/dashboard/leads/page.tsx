@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useLeads } from '@/hooks/useLeads';
 import { useInboundCalls, deleteInboundCall, convertInboundCallToLead } from '@/hooks/useInboundCalls';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Search, UserPlus, Mail, Phone, Calendar, ArrowRight, ChevronLeft, ChevronRight, Trash2, PhoneCall, Loader2 } from 'lucide-react';
+import { Search, UserPlus, Mail, Phone, Calendar, ArrowRight, ChevronLeft, ChevronRight, Trash2, PhoneCall, Loader2, Copy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LeadsPage() {
@@ -13,6 +13,7 @@ export default function LeadsPage() {
     const [tabView, setTabView] = useState<'leads' | 'inbound'>('leads');
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [convertingId, setConvertingId] = useState<string | null>(null);
+    const [callingId, setCallingId] = useState<string | null>(null);
     
     const { data, isLoading } = useLeads(page, 10, search);
     const { data: inboundData, isLoading: inboundLoading, refetch: refetchInbound } = useInboundCalls(page, 10, search);
@@ -35,6 +36,30 @@ export default function LeadsPage() {
             alert('Failed to delete inbound call');
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const handleCallInbound = async (callerPhone: string) => {
+        setCallingId(callerPhone);
+        try {
+            const response = await fetch('/api/voice/outbound', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ to: callerPhone })
+            });
+            
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Call failed');
+            
+            alert('Call initiated to ' + callerPhone);
+        } catch (error) {
+            console.error('Error making call:', error);
+            alert('Failed to initiate call');
+        } finally {
+            setCallingId(null);
         }
     };
 
@@ -323,12 +348,12 @@ export default function LeadsPage() {
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <button
-                                                        onClick={() => handleConvertToLead(call.id, call.callerPhone)}
-                                                        disabled={convertingId === call.id}
-                                                        className="p-2 hover:bg-blue-100 rounded-lg transition-colors text-zinc-400 hover:text-blue-600 disabled:opacity-50"
-                                                        title="Convert to lead"
+                                                        onClick={() => handleCallInbound(call.callerPhone)}
+                                                        disabled={callingId === call.callerPhone}
+                                                        className="p-2 hover:bg-green-100 rounded-lg transition-colors text-zinc-400 hover:text-green-600 disabled:opacity-50"
+                                                        title="Call back"
                                                     >
-                                                        {convertingId === call.id ? (
+                                                        {callingId === call.callerPhone ? (
                                                             <Loader2 className="w-4 h-4 animate-spin" />
                                                         ) : (
                                                             <PhoneCall className="w-4 h-4" />
