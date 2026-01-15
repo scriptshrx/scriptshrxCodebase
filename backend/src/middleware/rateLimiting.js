@@ -19,6 +19,15 @@ const authLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: false,
+    handler: (req, res) => {
+        console.log(`[Auth Rate Limit] Login rate limited at ${new Date().toISOString()} for IP: ${req.ip}`);
+        res.status(429).json({
+            success: false,
+            error: 'Too many login attempts. Please try again later.',
+            code: 'RATE_LIMIT_EXCEEDED',
+            retryAfter: '1 minute'
+        });
+    }
 });
 
 // Registration limiter - prevent trial abuse
