@@ -80,6 +80,7 @@ class VoiceService {
                         aiName: true,
                         aiWelcomeMessage: true,
                         customSystemPrompt: true,
+                        aiConfig: true,
                         timezone: true
                     }
                 });
@@ -91,6 +92,7 @@ class VoiceService {
                         aiName: true,
                         aiWelcomeMessage: true,
                         customSystemPrompt: true,
+                        aiConfig: true,
                         timezone: true
                     }
                 }) || { id: 'fallback', name: 'Our Business', aiName: 'AI Assistant' };
@@ -250,15 +252,25 @@ class VoiceService {
             pricing = await this.getPricingContext(tenant.id);
         }
 
-        // 2. Build the System Prompt using the dynamic business name and AI name
-        const systemPrompt = `
+        // 2. Build the System Prompt - Use custom system prompt from tenant config if available
+        let systemPrompt;
+        
+        if (tenant?.customSystemPrompt && tenant.customSystemPrompt.trim()) {
+            // Use the custom system prompt configured by the organization in dashboard
+            systemPrompt = tenant.customSystemPrompt;
+        } else if (tenant?.aiConfig?.systemPrompt && tenant.aiConfig.systemPrompt.trim()) {
+            // Alternative: Use systemPrompt from aiConfig JSON if customSystemPrompt not set
+            systemPrompt = tenant.aiConfig.systemPrompt;
+        } else {
+            // Fallback to default system prompt
+            systemPrompt = `
     You are a professional AI voice assistant named ${aiName} for ${companyName}.
     Your goal is to assist callers with questions and booking.
     
     **Mission:**
     - Provide friendly, accurate, and timely assistance.
     - Ensure every booking is recorded correctly in the database.
-    - Respect the caller’s time and privacy.
+    - Respect the caller's time and privacy.
     
     Pricing Information:
     ${pricing}
@@ -268,6 +280,12 @@ class VoiceService {
     - You have access to a tool to book appointments.
     - If you are unsure of an answer, offer to take a message for the manager.
     `;
+        }
+        
+        // Append pricing info if not already in custom prompt
+        if (!systemPrompt.toLowerCase().includes('pricing') && pricing) {
+            systemPrompt += `\n\nPricing Information:\n${pricing}`;
+        }
 
         console.log('[VoiceService] Initiating OpenAI WebSocket connection');
         const apiKey = process.env.OPENAI_API_KEY;
