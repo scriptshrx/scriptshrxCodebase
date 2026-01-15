@@ -299,9 +299,13 @@ router.post('/login', authLimiter, async (req, res, next) => {
     };
 
     try {
-        console.log('[Login] Login attempt just started');
+        console.log('[Login] ====== LOGIN ROUTE STARTED ======');
+        console.log('[Login] Timestamp:', new Date().toISOString());
         console.log('[Login] DATABASE_URL:', process.env.DATABASE_URL ? '***SET***' : '***NOT SET***');
         console.log('[Login] DIRECT_URL:', process.env.DIRECT_URL ? '***SET***' : '***NOT SET***');
+        console.log('[Login] NODE_ENV:', process.env.NODE_ENV);
+        console.log('[Login] Request body received:', req.body ? 'YES' : 'NO');
+        console.log('[Login] Request headers:', JSON.stringify(req.headers));
         
         const result = loginSchema.safeParse(req.body);
         if (!result.success) {
@@ -349,7 +353,12 @@ router.post('/login', authLimiter, async (req, res, next) => {
             }
         });
     } catch (error) {
-        console.error('[Login] Unexpected error:', error.message, error.stack);
+        console.error('[Login] ====== ERROR CAUGHT ======');
+        console.error('[Login] Error message:', error.message);
+        console.error('[Login] Error name:', error.name);
+        console.error('[Login] Error code:', error.code);
+        console.error('[Login] Full stack:', error.stack);
+        console.error('[Login] Error details:', JSON.stringify(error, null, 2));
         return sendResponse(500, { error: 'Login failed', details: error.message });
     }
 });
