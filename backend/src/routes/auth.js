@@ -300,6 +300,8 @@ router.post('/login', authLimiter, async (req, res, next) => {
 
     try {
         console.log('[Login] Login attempt just started');
+        console.log('[Login] DATABASE_URL:', process.env.DATABASE_URL ? '***SET***' : '***NOT SET***');
+        console.log('[Login] DIRECT_URL:', process.env.DIRECT_URL ? '***SET***' : '***NOT SET***');
         
         const result = loginSchema.safeParse(req.body);
         if (!result.success) {
