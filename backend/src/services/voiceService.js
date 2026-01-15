@@ -488,7 +488,9 @@ RESTRICTIONS
                     const transcript = msg.transcript;
                     console.log(`[VoiceService] AI Transcript: "${transcript}"`);
                     if (session.tenant) {
-                        this.saveMessage(session, 'assistant', transcript);
+                        this.saveMessage(session, 'assistant', transcript).catch(err => 
+                            console.error('[VoiceService] Error saving AI transcript:', err.message)
+                        );
                     }
                 }
 
@@ -497,7 +499,9 @@ RESTRICTIONS
                     const transcript = msg.transcript;
                     console.log(`[VoiceService] User Transcript: "${transcript}"`);
                     if (session.tenant) {
-                        this.saveMessage(session, 'user', transcript);
+                        this.saveMessage(session, 'user', transcript).catch(err => 
+                            console.error('[VoiceService] Error saving user transcript:', err.message)
+                        );
                     }
                 }
 
@@ -651,17 +655,46 @@ RESTRICTIONS
     }
     async saveMessage(session, role, content) {
         try {
-            await prisma.message.create({
-                data: {
-                    sessionId: session.streamSid, // Using streamSid as session key
-                    role: role, // 'user' or 'assistant'
-                    content: content,
-                    tenantId: session.tenant.id,
-                    source: 'voice'
+            // Validate required fields
+            if (!session?.streamSid || !session?.tenant?.id || !content) {
+                console.warn('[VoiceService] Skipping message save - missing required fields');
+                return;
+            }
+
+            // Add retry logic with exponential backoff for prepared statement errors
+            let retries = 3;
+            let lastError;
+
+            while (retries > 0) {
+                try {
+                    await prisma.message.create({
+                        data: {
+                            sessionId: session.streamSid, // Using streamSid as session key
+                            role: role, // 'user' or 'assistant'
+                            content: content,
+                            tenantId: session.tenant.id,
+                            source: 'voice'
+                        }
+                    });
+                    return; // Success
+                } catch (err) {
+                    lastError = err;
+                    // Check if it's the prepared statement error
+                    if (err.code === 'P2028' || (err.message && err.message.includes('prepared statement'))) {
+                        retries--;
+                        if (retries > 0) {
+                            // Wait before retry with exponential backoff
+                            await new Promise(resolve => setTimeout(resolve, Math.pow(2, 3 - retries) * 100));
+                        }
+                    } else {
+                        throw err; // Not a retriable error
+                    }
                 }
-            });
+            }
+
+            console.error('[VoiceService] Failed to save message after retries:', lastError?.message || lastError);
         } catch (error) {
-            console.error('[VoiceService] Failed to save message:', error);
+            console.error('[VoiceService] Failed to save message:', error?.message || error);
         }
     }
 
