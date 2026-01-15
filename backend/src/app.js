@@ -164,7 +164,7 @@ console.log('→ /api/audit-logs registered (Enterprise SOC2)');
 // Twilio Webhooks
 const twilioRouter = require('./routes/twilio');
 app.use('/api/twilio', twilioRouter);
-app.use('/webhooks', webhooksRouter); // Existingg webhooks (Stripe?)
+app.use('/webhooks', webhooksRouter); // Existing webhooks (Stripe?)
 
 // Admin Routes (Subscribers, Analytics)
 const adminRouter = require('./routes/admin');
