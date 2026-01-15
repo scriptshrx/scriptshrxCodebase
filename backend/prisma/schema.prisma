@@ -105,7 +105,7 @@ model User {
   role         String  @default("MEMBER") // SUPER_ADMIN, ADMIN, MEMBER
   
   // RBAC Fields
-  roleId       String?
+  roleId       String? @map("role_id")
   definedRole  Role?   @relation(fields: [roleId], references: [id])
 
   tenantId     String
