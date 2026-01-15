@@ -108,7 +108,7 @@ model User {
   roleId       String? @map("role_id")
   definedRole  Role?   @relation(fields: [roleId], references: [id])
 
-  tenantId     String
+  tenantId     String  @map("tenant_id")
   tenant       Tenant  @relation(fields: [tenantId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
