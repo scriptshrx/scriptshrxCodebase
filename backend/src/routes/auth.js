@@ -230,7 +230,7 @@ router.post('/register', registerLimiter, async (req, res) => {
 
         //Sending welcome email upon successful registration
         console.log('[Register] Attempting to send welcome email to:', email);
-try {
+        try {
             /*
             
             await transporter.sendMail({
@@ -240,50 +240,30 @@ try {
                 html: welcomeMail
             });
             console.log('Welcome email sent to:', email);*/
-const welcomeMail = welcomeMailTemplate.replace('name', name);
+            const welcomeMail = welcomeMailTemplate.replace('name', name);
             console.log('The email html is:', welcomeMail);
 
-
-const response = await client.sendMail({
-    from: 
-    {
-        address: 'support@scriptishrx.net',
-        name: "Scriptishrx"
-    },
-    to: 
-    [
-        {
-        "email_address": 
-            {
-                address: email,
-                name: name
-            }
-        }
-    ],
-    bcc: [{ email_address: { address: "support@scriptishrx.net" } }],
-    subject: "Welcome to ScriptishRX",
-    htmlbody: welcomeMail,
-});
-console.log('Email sent successfully:', response);
+            const response = await client.sendMail({
+                from: {
+                    address: 'support@scriptishrx.net',
+                    name: "Scriptishrx"
+                },
+                to: [
+                    {
+                        "email_address": {
+                            address: email,
+                            name: name
+                        }
+                    }
+                ],
+                bcc: [{ email_address: { address: "support@scriptishrx.net" } }],
+                subject: "Welcome to ScriptishRX",
+                htmlbody: welcomeMail,
+            });
+            console.log('Email sent successfully:', response);
             console.log('Welcome email sent to:', email);
-}
-         catch (emailError) {
-            console.error('Welcome email failed:', emailError.message);
-        }
-        // Send Welcome Email (Non-blocking)
-       /* try {
-            const notificationService = require('../services/notificationService');
-            notificationService.sendTemplatedEmail(
-                user.email,
-                'WELCOME_EMAIL',
-                {
-                    name: user.name?.split(' ')[0] || 'there',
-                    dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://scriptishrx.net'}/dashboard`
-                }
-            );
         } catch (emailError) {
-            console.error('[Auth] Welcome email failed:', emailError.message);
-        }
+            console.error('Welcome email failed:', emailError.message);
         }
         
         console.log('[Register] Sending success response...');
