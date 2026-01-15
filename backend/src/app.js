@@ -41,21 +41,34 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:5000',
-        'http://localhost:5001',
-        'https://scriptishrx.net',
-        'https://www.scriptishrx.net',
-        process.env.FRONTEND_URL
-    ].filter(Boolean),
+// Configure CORS with dynamic origin checking for Render domains
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'http://localhost:5000',
+            'http://localhost:5001',
+            'https://scriptishrx.net',
+            'https://www.scriptishrx.net',
+            'https://scriptishrxcodebase.onrender.com',
+            process.env.FRONTEND_URL
+        ].filter(Boolean);
+
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowedOrigins.includes(origin) || origin?.includes('onrender.com')) {
+            callback(null, true);
+        } else {
+            console.warn(`[CORS] Blocked origin: ${origin}`);
+            callback(new Error('CORS not allowed'));
+        }
+    },
     credentials: true,
-    // Include PATCH and HEAD so browser preflight permits all common request types
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id']
-}));
+};
+
+app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use(express.json({
@@ -65,6 +78,13 @@ app.use(express.json({
     }
 }));
 app.use(cookieParser());
+
+// Request timeout middleware - 30 seconds for all requests
+app.use((req, res, next) => {
+    req.setTimeout(30000); // 30 seconds
+    res.setTimeout(30000);
+    next();
+});
 
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // Default 15 minutes

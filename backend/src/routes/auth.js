@@ -284,34 +284,56 @@ router.post('/register', registerLimiter, async (req, res) => {
 });
 
 // Login — NOW WORKS WITH TWILIO
-router.post('/login', authLimiter, async (req, res) => {
-    console.log(`User: ${loginSchema.safeParse(req.body).data.email} logging back in`)
+router.post('/login', authLimiter, async (req, res, next) => {
+    const startTime = Date.now();
+    
+    // Ensure response is sent even if something goes wrong
+    const sendResponse = (status, body) => {
+        if (!res.headersSent) {
+            const duration = Date.now() - startTime;
+            console.log(`[Login] Response sent in ${duration}ms with status ${status}`);
+            res.status(status).json(body);
+        }
+    };
+
     try {
+        console.log('[Login] Login attempt started');
+        
         const result = loginSchema.safeParse(req.body);
-        if (!result.success) return res.status(400).json({ error: result.error.errors[0].message });
+        if (!result.success) {
+            console.error('[Login] Validation failed:', result.error.errors[0].message);
+            return sendResponse(400, { error: result.error.errors[0].message });
+        }
 
         const { email, password } = result.data;
+        console.log(`[Login] User: ${email} logging in`);
+        
         const user = await prisma.user.findUnique({
             where: { email },
-            include: { tenant: true } // optional: for debugging
+            include: { tenant: true }
         });
 
         if (!user) {
+            console.warn(`[Login] User not found: ${email}`);
             // Timing attack mitigation: Perform a dummy comparison to simulate work
             await bcrypt.compare(password, '$2b$10$abcdefghijklmnopqrstuv');
-            return res.status(401).json({ error: 'Invalid credentials' });
+            return sendResponse(401, { error: 'Invalid credentials' });
         }
 
+        console.log(`[Login] User found: ${user.id}, comparing passwords`);
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+            console.warn(`[Login] Invalid password for user: ${email}`);
+            return sendResponse(401, { error: 'Invalid credentials' });
         }
 
+        console.log(`[Login] Password valid, generating tokens for user: ${email}`);
         const { accessToken, refreshToken } = generateTokens(user);
 
         res.cookie('refresh_token', refreshToken, COOKIE_OPTIONS);
 
-        res.json({
+        console.log(`[Login] Login successful for user: ${email}`);
+        return sendResponse(200, {
             success: true,
             token: accessToken,
             user: {
@@ -319,18 +341,55 @@ router.post('/login', authLimiter, async (req, res) => {
                 email: user.email,
                 name: user.name,
                 role: user.role,
-                tenantId: user.tenantId   // ← This is now in token!
+                tenantId: user.tenantId
             }
         });
     } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ error: 'Login failed' });
+        console.error('[Login] Unexpected error:', error.message, error.stack);
+        return sendResponse(500, { error: 'Login failed', details: error.message });
     }
 });
 
-// Refresh & Logout — unchanged
+// Refresh & Logout
 router.post('/refresh', async (req, res) => {
-    // ... your existing code
+    try {
+        const refreshToken = req.cookies.refresh_token || req.body.refreshToken;
+        
+        if (!refreshToken) {
+            return res.status(401).json({ error: 'No refresh token provided' });
+        }
+
+        // Verify refresh token
+        const decoded = jwt.verify(refreshToken, REFRESH_SECRET);
+        
+        // Get user
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            include: { tenant: true }
+        });
+
+        if (!user) {
+            return res.status(401).json({ error: 'User not found' });
+        }
+
+        // Generate new tokens
+        const tokens = generateTokens(user);
+        res.cookie('refresh_token', tokens.refreshToken, COOKIE_OPTIONS);
+
+        res.json({
+            token: tokens.accessToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                tenantId: user.tenantId
+            }
+        });
+    } catch (error) {
+        console.error('[Refresh] Error:', error.message);
+        res.status(401).json({ error: 'Token refresh failed' });
+    }
 });
 
 router.post('/logout', (req, res) => {
