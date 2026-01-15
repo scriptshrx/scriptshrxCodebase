@@ -10,6 +10,12 @@ const prismaClient = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
 });
 
+// Create a separate client for high-concurrency operations (voice, webhooks)
+// This bypasses the context extension to avoid prepared statement conflicts
+const prismaConcurrentClient = new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+});
+
 // Add event listeners for connection issues
 prismaClient.$on('beforeDisconnect', () => {
     console.log('[Prisma] Preparing to disconnect');
@@ -91,4 +97,5 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 module.exports = prisma;
+module.exports.concurrent = prismaConcurrentClient;
 

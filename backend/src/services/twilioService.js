@@ -1,5 +1,7 @@
 const twilio = require('twilio');
-const prisma = require('../lib/prisma');
+const prismaDefault = require('../lib/prisma');
+// Use the concurrent client to avoid prepared statement conflicts
+const prisma = prismaDefault.concurrent || prismaDefault;
 const chatService = require('./chatService');
 
 class TwilioService {

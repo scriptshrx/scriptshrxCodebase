@@ -10,7 +10,9 @@
  */
 
 const WebSocket = require('ws');
-const prisma = require('../lib/prisma');
+const prismaDefault = require('../lib/prisma');
+// Use the concurrent client to avoid prepared statement conflicts
+const prisma = prismaDefault.concurrent || prismaDefault;
 const socketService = require('./socketService');
 
 // Twilio G711 μ-law = 20ms = 320 bytes
@@ -661,38 +663,16 @@ RESTRICTIONS
                 return;
             }
 
-            // Add retry logic with exponential backoff for prepared statement errors
-            let retries = 3;
-            let lastError;
-
-            while (retries > 0) {
-                try {
-                    await prisma.message.create({
-                        data: {
-                            sessionId: session.streamSid, // Using streamSid as session key
-                            role: role, // 'user' or 'assistant'
-                            content: content,
-                            tenantId: session.tenant.id,
-                            source: 'voice'
-                        }
-                    });
-                    return; // Success
-                } catch (err) {
-                    lastError = err;
-                    // Check if it's the prepared statement error
-                    if (err.code === 'P2028' || (err.message && err.message.includes('prepared statement'))) {
-                        retries--;
-                        if (retries > 0) {
-                            // Wait before retry with exponential backoff
-                            await new Promise(resolve => setTimeout(resolve, Math.pow(2, 3 - retries) * 100));
-                        }
-                    } else {
-                        throw err; // Not a retriable error
-                    }
+            // Use concurrent client to avoid prepared statement conflicts during high concurrency
+            await prisma.message.create({
+                data: {
+                    sessionId: session.streamSid,
+                    role: role,
+                    content: content,
+                    tenantId: session.tenant.id,
+                    source: 'voice'
                 }
-            }
-
-            console.error('[VoiceService] Failed to save message after retries:', lastError?.message || lastError);
+            });
         } catch (error) {
             console.error('[VoiceService] Failed to save message:', error?.message || error);
         }
