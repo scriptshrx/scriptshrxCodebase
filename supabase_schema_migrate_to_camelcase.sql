@@ -89,6 +89,9 @@ create table if not exists users (
   "tenantId" uuid references tenants(id) on delete cascade not null,
   "avatarUrl" text,
   "phoneNumber" text,
+  "googleAccessToken" text,
+  "googleRefreshToken" text,
+  "googleTokenExpiry" bigint,
   "createdAt" timestamp with time zone default timezone('utc'::text, now()) not null,
   "updatedAt" timestamp with time zone default timezone('utc'::text, now()) not null
 );
