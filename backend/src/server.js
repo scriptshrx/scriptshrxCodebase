@@ -119,26 +119,34 @@ server.listen(PORT, HOST, () => {
     console.log('');
 });
 
-// Graceful shutdown
+// Graceful shutdown with connection draining
 const shutdown = (signal) => {
     console.log(`\n${signal} received: shutting down gracefully...`);
+    console.log('Stopping new connections...');
+
+    // Stop accepting new connections
+    server.close(() => {
+        console.log('HTTP server closed - no more new connections accepted');
+        console.log('All existing connections closed');
+        process.exit(0);
+    });
 
     // Close all WebSocket connections
     wss.clients.forEach((client) => {
         client.close();
     });
 
-    server.close(() => {
-        console.log('HTTP server closed');
-        console.log('All connections closed');
-        process.exit(0);
-    });
-
-    // Force shutdown after timeout
-    setTimeout(() => {
-        console.error('Forced shutdown after timeout');
+    // Wait for in-flight requests to complete (with timeout)
+    // Give requests up to 30 seconds to finish
+    const drainTimeout = setTimeout(() => {
+        console.error('⚠️ Drain timeout reached - forcing shutdown');
         process.exit(1);
-    }, 10000);
+    }, 30000);
+
+    // If server closes before timeout, clear it
+    server.on('close', () => {
+        clearTimeout(drainTimeout);
+    });
 };
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
