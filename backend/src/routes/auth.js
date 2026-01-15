@@ -82,6 +82,7 @@ let client = new SendMailClient({url, token});
 router.post('/register', registerLimiter, async (req, res) => {
     console.log('Registering as', req.body);
     try {
+        try{
         const validated = registerSchema.parse(req.body);
         const { email, password, name, companyName, location, timezone, inviteToken } = validated;
 
@@ -89,6 +90,10 @@ router.post('/register', registerLimiter, async (req, res) => {
         if (existingUser) return res.status(400).json({ error: 'User already exists' });
 
         const hashedPassword = await bcrypt.hash(password, 10);
+        } catch(err){
+            console.log('Validation error:', err);
+            return res.status(400).json({ error: err.errors ? err.errors : err.message });
+        }
 
         // INVITE-BASED REGISTRATION (Join existing organization)
         if (inviteToken) {
