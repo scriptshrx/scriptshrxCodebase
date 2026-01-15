@@ -132,7 +132,7 @@ create table if not exists meeting_minutes (
 -- CALL & MESSAGING
 -- =====================
 
--- Call Sessions Table (Voice Call Tracking)
+-- Call Sessions Table (For Voice Call Tracking)
 create table if not exists call_sessions (
   id uuid default uuid_generate_v4() primary key,
   "tenantId" uuid references tenants(id) on delete cascade not null,
