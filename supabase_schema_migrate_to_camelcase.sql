@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS permissions CASCADE;
 DROP TABLE IF EXISTS roles CASCADE;
 DROP TABLE IF EXISTS tenants CASCADE;
+DROP TABLE IF EXISTS subscription_plans CASCADE;
 
 -- ScriptishRx Complete Supabase Schema (camelCase columns for Prisma compatibility)
 -- Enable UUID extension
@@ -24,6 +25,19 @@ create extension if not exists "uuid-ossp";
 -- =====================
 -- CORE TABLES
 -- =====================
+
+-- Subscription Plans Table
+create table if not exists subscription_plans (
+  id uuid default uuid_generate_v4() primary key,
+  name text unique not null,
+  price numeric(10, 2) not null,
+  currency text default 'USD',
+  "maxBookingsPerMonth" integer default 50,
+  "maxUsers" integer default 1,
+  features text[],
+  "createdAt" timestamp with time zone default timezone('utc'::text, now()) not null,
+  "updatedAt" timestamp with time zone default timezone('utc'::text, now()) not null
+);
 
 -- Tenants Table (Organizations)
 create table if not exists tenants (
@@ -35,6 +49,9 @@ create table if not exists tenants (
   
   -- Customization & Subscription
   plan text default 'Basic',
+  "subscriptionPlanId" uuid references subscription_plans(id) on delete set null,
+  
+  -- Customization
   "brandColor" text default '#000000',
   "logoUrl" text,
   "aiName" text default 'ScriptishRx AI',

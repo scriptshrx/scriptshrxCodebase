@@ -19,6 +19,8 @@ model Tenant {
 
   // Customization & Subscription
   plan             String  @default("Basic")
+  subscriptionPlanId String?
+  subscriptionPlan SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
   
   // Customization
   brandColor       String  @default("#000000")
@@ -52,6 +54,20 @@ model Tenant {
 
   @@index([name])
   @@map("tenants")
+}
+
+model SubscriptionPlan {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  maxBookingsPerMonth Int? @default(50)
+  maxUsers    Int @default(1)
+  features    String[]
+  tenants     Tenant[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("subscription_plans")
 }
 
 model User {
