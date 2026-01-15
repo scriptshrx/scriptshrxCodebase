@@ -80,6 +80,8 @@ const token = process.env.ZEPTOMAIL_KEY;
 let client = new SendMailClient({url, token});
 // Register — supports both new organization creation and invite-based join
 router.post('/register', registerLimiter, async (req, res) => {
+    console.log('DATABASE_URL used is:', process.env.DATABASE_URL);
+    console.log('DIRECT_URL used is:', process.env.DIRECT_URL);
     console.log('Registering as', req.body);
     try {
         let validated, email, password, name, companyName, location, timezone, inviteToken, hashedPassword;
