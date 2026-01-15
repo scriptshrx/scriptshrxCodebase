@@ -86,7 +86,7 @@ router.post('/register', registerLimiter, async (req, res) => {
         
         try{
             validated = registerSchema.parse(req.body);
-            ({ email, password, name, companyName, location, timezone, inviteToken } = validated);
+            ({ email, password, name, companyName, location, timezone, inviteToken = undefined } = validated);
 
             const existingUser = await prisma.user.findUnique({ where: { email } });
             if (existingUser) return res.status(400).json({ error: 'User already exists' });
