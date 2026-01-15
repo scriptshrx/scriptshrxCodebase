@@ -444,7 +444,7 @@ router.get('/info',
     verifyTenantAccess,
     async (req, res) => {
         try {
-            const tenantId = req.scopedTenantId || req.user?.tenantId;
+            const tenantId = req.user?.tenantId;
 
             const tenant = await prisma.tenant.findUnique({
                 where: { id: tenantId }
@@ -492,11 +492,10 @@ router.get('/info',
  */
 router.patch('/info',
     authenticateToken,
-    verifyTenantAccess,
     checkPermission('organization', 'update'),
     async (req, res) => {
         try {
-            const tenantId = req.scopedTenantId || req.user?.tenantId;
+            const tenantId = req.user?.tenantId;
             const {
                 name, location, timezone, phoneNumber,
                 brandColor, logoUrl,
