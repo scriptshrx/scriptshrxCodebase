@@ -297,7 +297,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
     };
 
     try {
-        console.log('[Login] Login attempt started');
+        console.log('[Login] Login attempt just started');
         
         const result = loginSchema.safeParse(req.body);
         if (!result.success) {

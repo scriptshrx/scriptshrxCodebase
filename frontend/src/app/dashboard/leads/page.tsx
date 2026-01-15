@@ -270,7 +270,7 @@ export default function LeadsPage() {
                                 <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Duration</th>
                                 <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Call Date</th>
-                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider text-right">Actions</th>
+                                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-50">
