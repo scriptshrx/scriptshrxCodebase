@@ -82,14 +82,16 @@ let client = new SendMailClient({url, token});
 router.post('/register', registerLimiter, async (req, res) => {
     console.log('Registering as', req.body);
     try {
+        let validated, email, password, name, companyName, location, timezone, inviteToken, hashedPassword;
+        
         try{
-        const validated = registerSchema.parse(req.body);
-        const { email, password, name, companyName, location, timezone, inviteToken } = validated;
+            validated = registerSchema.parse(req.body);
+            ({ email, password, name, companyName, location, timezone, inviteToken } = validated);
 
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) return res.status(400).json({ error: 'User already exists' });
+            const existingUser = await prisma.user.findUnique({ where: { email } });
+            if (existingUser) return res.status(400).json({ error: 'User already exists' });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+            hashedPassword = await bcrypt.hash(password, 10);
         } catch(err){
             console.log('Validation error:', err);
             return res.status(400).json({ error: err.errors ? err.errors : err.message });
@@ -164,17 +166,22 @@ router.post('/register', registerLimiter, async (req, res) => {
         // STANDARD REGISTRATION (New organization/workspace)
         const accountType = validated.accountType || 'ORGANIZATION';
         const role = accountType === 'INDIVIDUAL' ? 'SUBSCRIBER' : 'OWNER';
+        console.log('[Register] Standard registration - accountType:', accountType, 'role:', role);
 
         // For individuals, companyName is optional - use fallback
         const tenantName = validated.companyName || `${name}'s Workspace`;
 
         // Fetch DB Role
+        console.log('[Register] Looking up role:', role);
         const dbRole = await prisma.role.findUnique({ where: { name: role } });
         if (!dbRole) {
             throw new Error(`System role '${role}' not found. Please contact support or run seed.`);
         }
+        console.log('[Register] Found role:', dbRole.id);
 
+        console.log('[Register] Creating tenant and user in transaction...');
         const result = await prisma.$transaction(async (prisma) => {
+            console.log('[Register] Creating tenant:', tenantName);
             const tenant = await prisma.tenant.create({
                 data: {
                     name: tenantName,
@@ -183,6 +190,9 @@ router.post('/register', registerLimiter, async (req, res) => {
                     plan: 'Trial' // Start on Trial plan for full access
                 },
             });
+            console.log('[Register] Tenant created:', tenant.id);
+            
+            console.log('[Register] Creating user with roleId:', dbRole.id);
             const user = await prisma.user.create({
                 data: {
                     email,
@@ -193,9 +203,12 @@ router.post('/register', registerLimiter, async (req, res) => {
                     tenantId: tenant.id,
                 },
             });
+            console.log('[Register] User created:', user.id);
+            
             // 14-Day Free Trial Logic
             const trialEndDate = new Date();
             trialEndDate.setDate(trialEndDate.getDate() + 14);
+            console.log('[Register] Creating subscription - status: active, endDate:', trialEndDate);
 
             await prisma.subscription.create({
                 data: {
@@ -205,15 +218,18 @@ router.post('/register', registerLimiter, async (req, res) => {
                     endDate: trialEndDate
                 },
             });
+            console.log('[Register] Subscription created');
             return { tenant, user };
         });
 
         const { user, tenant } = result;
+        console.log('[Register] Transaction completed, generating tokens...');
         const { accessToken, refreshToken } = generateTokens(user);
 
         res.cookie('refresh_token', refreshToken, COOKIE_OPTIONS);
 
-        //Sending welcome email upon successful registration via invite
+        //Sending welcome email upon successful registration
+        console.log('[Register] Attempting to send welcome email to:', email);
 try {
             /*
             
@@ -268,16 +284,21 @@ console.log('Email sent successfully:', response);
         } catch (emailError) {
             console.error('[Auth] Welcome email failed:', emailError.message);
         }
-        */
-
+        }
+        
+        console.log('[Register] Sending success response...');
         res.status(201).json({
             token: accessToken,
             user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: tenant.id },
             tenant: { id: tenant.id, name: tenant.name }
         });
+        console.log('[Register] Registration completed successfully for:', email);
     } catch (error) {
-        if (error.name === 'ZodError') return res.status(400).json({ error: error.issues });
-        console.error('Registration error:', error);
+        if (error.name === 'ZodError') {
+            console.error('Zod validation error:', error.errors);
+            return res.status(400).json({ error: error.issues || error.errors });
+        }
+        console.error('Registration error:', error.message, error.stack);
         res.status(500).json({ error: `Registration failed: ${error.message}` });
     }
 });
