@@ -196,7 +196,7 @@ router.post('/register', registerLimiter, async (req, res) => {
                 data: {
                     userId: user.id,
                     plan: 'Trial',
-                    status: 'Active',
+                    status: 'active',
                     endDate: trialEndDate
                 },
             });
