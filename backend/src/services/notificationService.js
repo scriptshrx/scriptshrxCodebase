@@ -55,18 +55,28 @@ class NotificationService {
                 },
                 tls: {
                     rejectUnauthorized: false
-                }
-            });
-
-            this.transporter.verify(function (error, success) {
-                if (error) {
-                    console.error('❌ SMTP Connection Error:', error);
-                } else {
-                    console.log('✅ SMTP Server is ready to take our messages');
-                }
+                },
+                connectionTimeout: 3000,  // 3 second timeout
+                socketTimeout: 3000       // 3 second timeout
             });
 
             console.log('✅ Nodemailer configured for', process.env.SMTP_HOST);
+
+            // Verify connection asynchronously without blocking - set a timeout to prevent hanging
+            setImmediate(() => {
+                const verifyTimeout = setTimeout(() => {
+                    console.warn('⚠️ SMTP verification timeout (3s)');
+                }, 3000);
+
+                this.transporter.verify(function (error, success) {
+                    clearTimeout(verifyTimeout);
+                    if (error) {
+                        console.error('❌ SMTP Connection Error:', error.message);
+                    } else {
+                        console.log('✅ SMTP Server is ready to take our messages');
+                    }
+                });
+            });
         } else {
             const msg = 'SMTP Environment variables (SMTP_HOST, SMTP_USER, SMTP_PASS) are missing.';
             if (process.env.NODE_ENV === 'production') {
@@ -75,6 +85,7 @@ class NotificationService {
                 console.warn('⚠️ NotificationService:', msg, 'Emails will be mocked.');
             }
         }
+    }
 
         if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
             this.smsProvider = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
