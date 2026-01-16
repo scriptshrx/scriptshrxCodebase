@@ -316,19 +316,25 @@ router.post('/login', authLimiter, async (req, res, next) => {
         const { email, password } = result.data;
         console.log(`[Login] User: ${email} logging in`);
         
+        console.log(`[Login] Starting database query for user: ${email}`);
+        const queryStartTime = Date.now();
+        
         const user = await prisma.user.findUnique({
             where: { email },
             include: { tenant: true }
         });
+        
+        const queryDuration = Date.now() - queryStartTime;
+        console.log(`[Login] Database query completed in ${queryDuration}ms`);
 
         if (!user) {
-            console.warn(`[Login] User not found: ${email}`);
+            console.warn(`[Login] User not found: ${email} (query took ${queryDuration}ms)`);
             // Timing attack mitigation: Perform a dummy comparison to simulate work
             await bcrypt.compare(password, '$2b$10$abcdefghijklmnopqrstuv');
             return sendResponse(401, { error: 'Invalid credentials' });
         }
 
-        console.log(`[Login] User found: ${user.id}, comparing passwords`);
+        console.log(`[Login] User found: ${user.id}, comparing passwords (query took ${queryDuration}ms)`);
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
             console.warn(`[Login] Invalid password for user: ${email}`);

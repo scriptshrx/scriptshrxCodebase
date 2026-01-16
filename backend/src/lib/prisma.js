@@ -13,7 +13,11 @@ function getPrismaUrl() {
     // Use DIRECT_URL only for local Prisma commands (migrations)
     const url = process.env.DATABASE_URL || process.env.DIRECT_URL;
     const separator = url.includes('?') ? '&' : '?';
-    return url.includes('statement_cache_size') ? url : `${url}${separator}statement_cache_size=0`;
+    // Add connection timeout and statement cache settings
+    let fullUrl = url.includes('statement_cache_size') ? url : `${url}${separator}statement_cache_size=0`;
+    // Add connection timeout (5 seconds) and statement timeout (10 seconds)
+    fullUrl = fullUrl.includes('connect_timeout') ? fullUrl : `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}connect_timeout=5&statement_timeout=10000`;
+    return fullUrl;
 }
 
 const dbUrl = getPrismaUrl();
@@ -54,60 +58,84 @@ const prisma = prismaClient.$extends({
     query: {
         $allModels: {
             async $allOperations({ model, operation, args, query }) {
-                // List of models that HAVE a tenantId and should be filtered
-                const tenantModels = [
-                    'Client', 'Booking', 'Campaign', 'Workflow', 'Message',
-                    'CallSession', 'MeetingMinute', 'CustomTool', 'Service',
-                    'Notification', 'Transaction'
-                ];
-
-                // SKIP extension for models not in tenantModels to avoid prepared statement issues
-                if (!tenantModels.includes(model)) {
-                    return query(args);
+                const startTime = Date.now();
+                const queryId = Math.random().toString(36).substring(7);
+                
+                // Log query start for debugging
+                if (model === 'User' || model === 'Role') {
+                    console.log(`[Prisma] Query START [${queryId}]: ${model}.${operation}`, JSON.stringify(args).substring(0, 100));
                 }
+                
+                try {
+                    // List of models that HAVE a tenantId and should be filtered
+                    const tenantModels = [
+                        'Client', 'Booking', 'Campaign', 'Workflow', 'Message',
+                        'CallSession', 'MeetingMinute', 'CustomTool', 'Service',
+                        'Notification', 'Transaction'
+                    ];
 
-                const tenantId = context.getTenantId();
-                const userId = context.getUserId();
-
-                // Only filter tenant-scoped models when tenantId is available
-                if (
-                    tenantId &&
-                    tenantModels.includes(model) &&
-                    ['findMany', 'findFirst', 'count', 'aggregate', 'groupBy'].includes(operation)
-                ) {
-                    if (!args.where) args.where = {};
-
-                    // If tenantId is not already explicitly set, inject it
-                    if (args.where.tenantId === undefined) {
-                        args.where.tenantId = tenantId;
+                    // SKIP extension for models not in tenantModels to avoid prepared statement issues
+                    if (!tenantModels.includes(model)) {
+                        const result = await query(args);
+                        const duration = Date.now() - startTime;
+                        if (model === 'User' || model === 'Role') {
+                            console.log(`[Prisma] Query SUCCESS [${queryId}]: ${model}.${operation} completed in ${duration}ms`);
+                        }
+                        return result;
                     }
 
-                    // Workflow privacy: enforce owner access
-                    if (model === 'Workflow' && userId && !args.where.createdById) {
-                        args.where.createdById = userId;
-                    }
-                }
+                    const tenantId = context.getTenantId();
+                    const userId = context.getUserId();
 
-                // For create/createMany, inject tenantId if missing
-                if (tenantId && tenantModels.includes(model) && ['create', 'createMany'].includes(operation)) {
-                    if (operation === 'create') {
-                        if (!args.data) args.data = {};
-                        if (!args.data.tenantId) args.data.tenantId = tenantId;
+                    // Only filter tenant-scoped models when tenantId is available
+                    if (
+                        tenantId &&
+                        tenantModels.includes(model) &&
+                        ['findMany', 'findFirst', 'count', 'aggregate', 'groupBy'].includes(operation)
+                    ) {
+                        if (!args.where) args.where = {};
 
-                        // Workflow privacy: set creator
-                        if (model === 'Workflow' && userId && !args.data.createdById) {
-                            args.data.createdById = userId;
+                        // If tenantId is not already explicitly set, inject it
+                        if (args.where.tenantId === undefined) {
+                            args.where.tenantId = tenantId;
+                        }
+
+                        // Workflow privacy: enforce owner access
+                        if (model === 'Workflow' && userId && !args.where.createdById) {
+                            args.where.createdById = userId;
                         }
                     }
-                }
 
-                // For update/delete operations, ensure tenant isolation
-                if (tenantId && tenantModels.includes(model) && ['update', 'updateMany', 'delete', 'deleteMany'].includes(operation)) {
-                    if (!args.where) args.where = {};
-                    if (!args.where.tenantId) args.where.tenantId = tenantId;
-                }
+                    // For create/createMany, inject tenantId if missing
+                    if (tenantId && tenantModels.includes(model) && ['create', 'createMany'].includes(operation)) {
+                        if (operation === 'create') {
+                            if (!args.data) args.data = {};
+                            if (!args.data.tenantId) args.data.tenantId = tenantId;
 
-                return query(args);
+                            // Workflow privacy: set creator
+                            if (model === 'Workflow' && userId && !args.data.createdById) {
+                                args.data.createdById = userId;
+                            }
+                        }
+                    }
+
+                    // For update/delete operations, ensure tenant isolation
+                    if (tenantId && tenantModels.includes(model) && ['update', 'updateMany', 'delete', 'deleteMany'].includes(operation)) {
+                        if (!args.where) args.where = {};
+                        if (!args.where.tenantId) args.where.tenantId = tenantId;
+                    }
+
+                    const result = await query(args);
+                    const duration = Date.now() - startTime;
+                    if (model === 'User' || model === 'Role') {
+                        console.log(`[Prisma] Query SUCCESS [${queryId}]: ${model}.${operation} completed in ${duration}ms`);
+                    }
+                    return result;
+                } catch (error) {
+                    const duration = Date.now() - startTime;
+                    console.error(`[Prisma] Query ERROR [${queryId}]: ${model}.${operation} failed after ${duration}ms`, error.message);
+                    throw error;
+                }
             }
         }
     }
