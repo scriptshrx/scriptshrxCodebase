@@ -7,7 +7,9 @@
     "start": "node src/server.js",
     "test-email-sendgrid": "node -e \"require('dotenv').config(); const sgMail=require('@sendgrid/mail'); sgMail.setApiKey(process.env.SENDGRID_API_KEY); const msg={to:'vincentagber74@gmail.com', from:process.env.EMAIL_FROM||'info@scriptishrx.com', subject:'SendGrid Test – ScriptishRx', html:'<p>This is a test email via SendGrid.</p>'}; sgMail.send(msg).then(()=>console.log('✅ SendGrid email sent')).catch(e=>console.error('❌ SendGrid error',e));\"",
     "test": "jest",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

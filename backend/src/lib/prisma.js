@@ -6,18 +6,13 @@ const context = require('./context');
 // Load env vars from root .env
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
-// Disable prepared statements for PgBouncer compatibility
-// statement_cache_size=0 prevents "prepared statement already exists" errors
+// Disable prepared statements for PgBouncer/Pooler compatibility
+// pgbouncer=true tells Prisma to use transaction mode for prepared statements
 function getPrismaUrl() {
     // Use DATABASE_URL (pooler) in production (Render)
     // Use DIRECT_URL only for local Prisma commands (migrations)
     const url = process.env.DATABASE_URL || process.env.DIRECT_URL;
-    const separator = url.includes('?') ? '&' : '?';
-    // Add connection timeout and statement cache settings
-    let fullUrl = url.includes('statement_cache_size') ? url : `${url}${separator}statement_cache_size=0`;
-    // Add connection pool settings: 20 connection limit, 5 second timeout
-    fullUrl = fullUrl.includes('connect_timeout') ? fullUrl : `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}connect_timeout=5&connection_limit=20&pool_timeout=5`;
-    return fullUrl;
+    return url;
 }
 
 const dbUrl = getPrismaUrl();
