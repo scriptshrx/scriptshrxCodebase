@@ -100,13 +100,13 @@ export default function InsightsPage() {
                     icon={<DollarSign className="w-5 h-5 text-green-600" />}
                     bg="bg-green-50"
                 />
-                <MetricCard
+                {/*<MetricCard
                     title="Client Retention"
                     value={`${retentionRate}%`}
                     trend={retentionRate > 50 ? "+2.4%" : "-1.0%"}
                     icon={<Users className="w-5 h-5 text-blue-600" />}
                     bg="bg-blue-50"
-                />
+                />*/}
                 <MetricCard
                     title="Outbound Campaigns"
                     value={outbound?.totalSent || 0}
