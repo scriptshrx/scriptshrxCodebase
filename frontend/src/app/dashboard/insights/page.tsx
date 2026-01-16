@@ -92,7 +92,7 @@ export default function InsightsPage() {
             </div>
 
             {/* Key Metrics Row */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <MetricCard
                     title="Total Revenue (Est.)"
                     value={`$${metrics.totalRevenue.value.toFixed(2)}`}
