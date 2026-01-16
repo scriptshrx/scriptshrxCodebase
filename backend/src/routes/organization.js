@@ -576,6 +576,27 @@ router.patch('/info',
                         return res.status(400).json({ success: false, error: `Invalid Phone Number format. Got: '${cleanedPhone}'. Expected E.164 (e.g. +18667243198)` });
                     }
 
+                    // Check if another tenant already has this phone number
+                    const existingPhoneNumber = await prisma.tenant.findFirst({
+                        where: {
+                            AND: [
+                                { id: { not: tenantId } },
+                                {
+                                    OR: [
+                                        { phoneNumber: cleanedPhone }
+                                    ]
+                                }
+                            ]
+                        }
+                    });
+
+                    if (existingPhoneNumber) {
+                        return res.status(409).json({
+                            success: false,
+                            error: `This phone number (${cleanedPhone}) is already registered with another company. Each company must use a unique phone number.`
+                        });
+                    }
+
                     // Use the sanitized number for saving
                     twilioConfig.phoneNumber = cleanedPhone;
                 }
@@ -599,6 +620,15 @@ router.patch('/info',
             });
         } catch (error) {
             console.error('Error updating organization:', error);
+            
+            // Handle Prisma unique constraint violation
+            if (error.code === 'P2002') {
+                return res.status(409).json({
+                    success: false,
+                    error: 'This phone number is already registered. Each company must use a unique phone number.'
+                });
+            }
+            
             res.status(500).json({
                 success: false,
                 error: 'Failed to update organization'

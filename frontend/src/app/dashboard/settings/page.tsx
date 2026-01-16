@@ -293,10 +293,11 @@ function VoiceAgentSettings({ showToast }: { showToast: (msg: string, type: 'suc
                 })
             });
 
+            const data = await res.json();
             if (res.ok) {
                 showToast('Inbound number saved successfully!', 'success');
             } else {
-                showToast('Failed to save configuration.', 'error');
+                showToast(data.error || 'Failed to save configuration.', 'error');
             }
         } catch (error) {
             showToast('Network error while saving.', 'error');
