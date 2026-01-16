@@ -92,7 +92,7 @@ export default function InsightsPage() {
             </div>
 
             {/* Key Metrics Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                 <MetricCard
                     title="Total Revenue (Est.)"
                     value={`$${metrics.totalRevenue.value.toFixed(2)}`}
@@ -113,6 +113,13 @@ export default function InsightsPage() {
                     trend={`Open Rate: ${outbound?.avgOpenRate || 0}%`}
                     icon={<TrendingUp className="w-5 h-5 text-purple-600" />}
                     bg="bg-purple-50"
+                />
+                <MetricCard
+                    title="Inbound Calls"
+                    value={`${metrics.inboundCalls.value}`}
+                    trend={`${metrics.inboundCalls.growth > 0 ? '+' : ''}${metrics.inboundCalls.growth}%`}
+                    icon={<Activity className="w-5 h-5 text-cyan-600" />}
+                    bg="bg-cyan-50"
                 />
                 <MetricCard
                     title="Booking Conv. Rate"

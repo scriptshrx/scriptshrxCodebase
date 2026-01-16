@@ -31,6 +31,7 @@ router.get('/', async (req, res) => {
         let voiceInteractions = 0, voiceLastMonth = 0, voiceCurrentMonth = 0;
         let activeClients = 0, clientsLastMonth = 0, clientsCurrentMonth = 0;
         let pendingBookings = 0, bookingsLastMonth = 0, bookingsCurrentMonth = 0;
+        let inboundCalls = 0, inboundLastMonth = 0, inboundCurrentMonth = 0;
         let revenueAgg = { _sum: { amount: 0 } }, revenueLastMonthAgg = { _sum: { amount: 0 } }, revenueCurrentMonthAgg = { _sum: { amount: 0 } };
         let allTransactions = [];
 
@@ -75,6 +76,14 @@ router.get('/', async (req, res) => {
                 prisma.booking.count({
                     where: { tenantId, createdAt: { gte: firstDayCurrentMonth } }
                 }).catch(() => 0),
+                // Inbound Calls queries
+                prisma.inboundCall.count({ where: { tenantId } }).catch(() => 0),
+                prisma.inboundCall.count({
+                    where: { tenantId, createdAt: { gte: firstDayLastMonth, lte: lastDayLastMonth } }
+                }).catch(() => 0),
+                prisma.inboundCall.count({
+                    where: { tenantId, createdAt: { gte: firstDayCurrentMonth } }
+                }).catch(() => 0),
                 prisma.transaction.aggregate({
                     _sum: { amount: true },
                     where: { tenantId, status: 'succeeded' }
@@ -107,6 +116,7 @@ router.get('/', async (req, res) => {
                 voiceInteractions, voiceLastMonth, voiceCurrentMonth,
                 activeClients, clientsLastMonth, clientsCurrentMonth,
                 pendingBookings, bookingsLastMonth, bookingsCurrentMonth,
+                inboundCalls, inboundLastMonth, inboundCurrentMonth,
                 revenueAgg, revenueLastMonthAgg, revenueCurrentMonthAgg,
                 allTransactions
             ] = results;
@@ -174,6 +184,10 @@ router.get('/', async (req, res) => {
                     value: activeClients,
                     growth: calculateGrowth(clientsCurrentMonth, clientsLastMonth)
                 },
+                inboundCalls: {
+                    value: inboundCalls,
+                    growth: calculateGrowth(inboundCurrentMonth, inboundLastMonth)
+                },
                 pendingBookings: {
                     value: pendingBookings,
                     growth: calculateGrowth(bookingsCurrentMonth, bookingsLastMonth)
@@ -189,6 +203,7 @@ router.get('/', async (req, res) => {
             totalRevenue,
             activeClients,
             voiceInteractions,
+            inboundCalls,
             pendingBookings,
             retentionRate,
             convRate,
@@ -219,6 +234,7 @@ router.get('/', async (req, res) => {
             totalRevenue: 0,
             activeClients: 0,
             voiceInteractions: 0,
+            inboundCalls: 0,
             pendingBookings: 0,
             retentionRate: 0,
             convRate: 0,
