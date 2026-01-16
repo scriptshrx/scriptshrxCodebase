@@ -230,17 +230,6 @@ export default function InsightsPage() {
                     )}
                 </div>
             </div>
-                                    <Area type="monotone" dataKey="revenue" stroke="#8884d8" fillOpacity={1} fill="url(#colorPv)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="h-full flex items-center justify-center text-gray-400">
-                                No revenue data yet.
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
 
             {/* AI Analysis Section */}
             <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-3xl p-8 text-white relative overflow-hidden">
