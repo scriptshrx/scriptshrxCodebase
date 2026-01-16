@@ -1,7 +1,6 @@
 // backend/routes/auth.js
 
 const express = require('express');
-const nodemailer = require('nodemailer');
 const router = express.Router();
 const prismaDefault = require('../lib/prisma');
 // Use concurrent client for auth routes to avoid prepared statement conflicts
@@ -57,18 +56,6 @@ const generateTokens = (user) => {
 
     return { accessToken, refreshToken };
 };
-
-
-//I define the smtp parts
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: true,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
-});
 
 const htmlPath = path.join(process.cwd(),'src','routes','welcomeMail.html');
 const welcomeMailTemplate = fs.readFileSync(htmlPath, 'utf8');
