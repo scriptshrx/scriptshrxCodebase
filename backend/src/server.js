@@ -13,7 +13,8 @@ envPaths.forEach(envPath => {
 });
 
 const lifecycleService = require('./services/lifecycleService'); // start lifecycle automation
-require('./subscribers/notificationSubscriber'); // Initialize Event Bus Subscribers
+// DISABLED: Notification subscriber causes SMTP connection timeout on startup
+// require('./subscribers/notificationSubscriber'); // Initialize Event Bus Subscribers
 const http = require('http');
 const app = require('./app');
 
