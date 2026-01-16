@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { TrendingUp, Users, DollarSign, Activity, Sparkles, Loader2 } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { TrendingUp, Users, DollarSign, Activity, Sparkles, Loader2, TrendingDown } from 'lucide-react';
 
 export default function InsightsPage() {
     const [data, setData] = useState<any>(null);
+    const [registrationData, setRegistrationData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
 
@@ -16,24 +17,34 @@ export default function InsightsPage() {
     const fetchInsights = async () => {
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch('/api/insights', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const [insightsRes, registrationRes] = await Promise.all([
+                fetch('/api/insights', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch('/api/insights/user-registrations', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
 
-            if (res.status === 401) {
+            if (insightsRes.status === 401 || registrationRes.status === 401) {
                 // Token expired or invalid
                 localStorage.removeItem('token');
                 window.location.href = '/login';
                 return;
             }
 
-            if (res.ok) {
-                const contentType = res.headers.get("content-type");
+            if (insightsRes.ok) {
+                const contentType = insightsRes.headers.get("content-type");
                 if (contentType && contentType.indexOf("application/json") !== -1) {
-                    setData(await res.json());
+                    setData(await insightsRes.json());
                 } else {
                     console.warn('Received non-JSON response from /api/insights');
                 }
+            }
+
+            if (registrationRes.ok) {
+                const regData = await registrationRes.json();
+                setRegistrationData(regData.registrationData || []);
             }
         } catch (error) {
             console.error('Fetch error:', error);
@@ -148,6 +159,77 @@ export default function InsightsPage() {
                                             <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
+                                    <Area type="monotone" dataKey="revenue" stroke="#8884d8" fillOpacity={1} fill="url(#colorPv)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-full flex items-center justify-center text-gray-400">
+                                No revenue data yet.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* User Registration Chart */}
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-900">User Registration Growth</h2>
+                        <p className="text-sm text-gray-500 mt-1">Total registered users over time</p>
+                    </div>
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                        <TrendingUp className="w-4 h-4 text-blue-600" />
+                    </div>
+                </div>
+                <div className="h-80">
+                    {registrationData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={registrationData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                <XAxis 
+                                    dataKey="date" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                                    dy={10}
+                                    angle={-45}
+                                    textAnchor="end"
+                                    height={80}
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                                    label={{ value: 'Total Users', angle: -90, position: 'insideLeft' }}
+                                />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    formatter={(value) => [`${value} users`, 'Total Users']}
+                                    labelFormatter={(label) => `Date: ${label}`}
+                                />
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="totalUsers" 
+                                    stroke="#3B82F6" 
+                                    strokeWidth={3}
+                                    dot={{ fill: '#3B82F6', r: 4 }}
+                                    activeDot={{ r: 6 }}
+                                    isAnimationActive={true}
+                                    animationDuration={800}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="h-full flex items-center justify-center text-gray-400">
+                            <div className="text-center">
+                                <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                                <p>No user registration data yet.</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
                                     <Area type="monotone" dataKey="revenue" stroke="#8884d8" fillOpacity={1} fill="url(#colorPv)" />
                                 </AreaChart>
                             </ResponsiveContainer>

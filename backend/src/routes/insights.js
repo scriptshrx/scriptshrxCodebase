@@ -129,4 +129,59 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET /api/insights/user-registrations - User Registration Trends
+router.get('/user-registrations', async (req, res) => {
+    try {
+        const tenantId = req.user.tenantId;
+
+        // Fetch all users for this tenant with their createdAt dates
+        const users = await prisma.user.findMany({
+            where: { tenantId },
+            select: {
+                id: true,
+                createdAt: true
+            },
+            orderBy: { createdAt: 'asc' }
+        });
+
+        if (users.length === 0) {
+            return res.json({
+                registrationData: []
+            });
+        }
+
+        // Group users by date (YYYY-MM-DD) and create cumulative count
+        const dateMap = new Map();
+        let cumulativeCount = 0;
+
+        users.forEach(user => {
+            const date = user.createdAt.toISOString().split('T')[0]; // YYYY-MM-DD format
+            
+            if (!dateMap.has(date)) {
+                dateMap.set(date, 0);
+            }
+            dateMap.set(date, dateMap.get(date) + 1);
+        });
+
+        // Convert to array and calculate cumulative counts
+        const registrationData = Array.from(dateMap.entries())
+            .map(([date, dailyCount]) => {
+                cumulativeCount += dailyCount;
+                return {
+                    date,
+                    dailyRegistrations: dailyCount,
+                    totalUsers: cumulativeCount
+                };
+            });
+
+        res.json({
+            registrationData
+        });
+
+    } catch (error) {
+        console.error('Error fetching user registrations:', error);
+        res.status(500).json({ error: 'Failed to fetch user registration data' });
+    }
+});
+
 module.exports = router;
