@@ -56,8 +56,8 @@ class NotificationService {
                 tls: {
                     rejectUnauthorized: false
                 },
-                connectionTimeout: 3000,  // 3 second timeout
-                socketTimeout: 3000       // 3 second timeout
+                connectionTimeout: 12000,  // 12 second timeout
+                socketTimeout: 12000       // 12 second timeout
             });
 
             console.log('✅ Nodemailer configured for', process.env.SMTP_HOST);
@@ -65,8 +65,8 @@ class NotificationService {
             // Verify connection asynchronously without blocking - set a timeout to prevent hanging
             setImmediate(() => {
                 const verifyTimeout = setTimeout(() => {
-                    console.warn('⚠️ SMTP verification timeout (3s)');
-                }, 3000);
+                    console.warn('⚠️ SMTP verification timeout (12s)');
+                }, 12000);
 
                 this.transporter.verify(function (error, success) {
                     clearTimeout(verifyTimeout);
@@ -85,7 +85,6 @@ class NotificationService {
                 console.warn('⚠️ NotificationService:', msg, 'Emails will be mocked.');
             }
         }
-    }
 
         if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
             this.smsProvider = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
