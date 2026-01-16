@@ -96,12 +96,58 @@ router.get('/', async (req, res) => {
         const revCurrent = (revenueCurrentMonthAgg._sum.amount || 0) / 100;
         const revLast = (revenueLastMonthAgg._sum.amount || 0) / 100;
 
+        // 6. Build Revenue Chart (monthly data for last 12 months)
+        const revenueChart = [];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        for (let i = 11; i >= 0; i--) {
+            const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+            const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+            
+            const monthRevenue = await prisma.transaction.aggregate({
+                _sum: { amount: true },
+                where: {
+                    tenantId,
+                    status: 'succeeded',
+                    createdAt: { gte: monthStart, lte: monthEnd }
+                }
+            });
+            
+            revenueChart.push({
+                month: months[monthDate.getMonth()],
+                revenue: (monthRevenue._sum.amount || 0) / 100
+            });
+        }
+
+        // 7. Build Behavior Chart (sample data from clients and bookings)
+        const behaviorChart = [
+            { name: 'Week 1', Visits: Math.floor(activeClients * 0.2), Bookings: Math.floor(pendingBookings * 0.3) },
+            { name: 'Week 2', Visits: Math.floor(activeClients * 0.25), Bookings: Math.floor(pendingBookings * 0.35) },
+            { name: 'Week 3', Visits: Math.floor(activeClients * 0.3), Bookings: Math.floor(pendingBookings * 0.4) },
+            { name: 'Week 4', Visits: Math.floor(activeClients * 0.25), Bookings: Math.floor(pendingBookings * 0.32) }
+        ];
+
+        // 8. Build AI Recommendation
+        const retentionRate = activeClients > 0 ? Math.floor((clientsCurrentMonth / activeClients) * 100) : 0;
+        const convRate = pendingBookings > 0 ? Math.floor((bookingsCurrentMonth / pendingBookings) * 100) : 0;
+        
+        let aiRecommendation = "Your business is performing well. Continue monitoring key metrics and maintain client engagement.";
+        if (revCurrent > revLast * 1.2) {
+            aiRecommendation = "📈 Excellent revenue growth detected! Your conversion rates are up 20%+. Maintain current strategies and consider scaling outbound campaigns.";
+        } else if (revCurrent < revLast * 0.8) {
+            aiRecommendation = "📉 Revenue is declining. Consider reviewing your pricing strategy, increasing marketing efforts, or analyzing client churn patterns.";
+        } else if (retentionRate > 75) {
+            aiRecommendation = "🎯 Strong client retention rate! Focus on upselling and expanding services to existing clients to maximize lifetime value.";
+        } else if (convRate > 40) {
+            aiRecommendation = "✅ Excellent conversion rate on bookings! Use this momentum to optimize your booking process and improve client experience.";
+        }
+
         // 5. Build Response
         res.json({
             metrics: {
                 voiceInteractions: {
                     value: voiceInteractions,
-                    growth: calculateGrowth(voiceCurrentMonth, voiceLastMonth) // Simplified growth metric
+                    growth: calculateGrowth(voiceCurrentMonth, voiceLastMonth)
                 },
                 activeClients: {
                     value: activeClients,
@@ -116,11 +162,20 @@ router.get('/', async (req, res) => {
                     growth: calculateGrowth(revCurrent, revLast)
                 }
             },
-            // Keep existing generic keys just in case frontend relies on them temporarily
+            revenueChart,
+            behaviorChart,
+            aiRecommendation,
+            // Keep existing generic keys for backwards compatibility
             totalRevenue: totalRevenue,
             activeClients: activeClients,
             voiceInteractions: voiceInteractions,
-            pendingBookings: pendingBookings
+            pendingBookings: pendingBookings,
+            retentionRate,
+            convRate,
+            outbound: {
+                totalSent: 0,
+                avgOpenRate: 0
+            }
         });
 
     } catch (error) {

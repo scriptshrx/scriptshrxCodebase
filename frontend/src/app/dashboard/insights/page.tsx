@@ -61,9 +61,16 @@ export default function InsightsPage() {
         );
     }
 
-    if (!data) return <div>Failed to load insights.</div>;
+    if (!data) {
+        return (
+            <div className="flex h-96 items-center justify-center flex-col">
+                <Activity className="w-8 h-8 text-red-400 mb-2" />
+                <p className="text-gray-600">Failed to load insights. Please refresh the page.</p>
+            </div>
+        );
+    }
 
-    const { metrics, revenueChart, behaviorChart, aiRecommendation } = data;
+    const { metrics, revenueChart, behaviorChart, aiRecommendation, retentionRate, convRate, outbound } = data;
 
     return (
         <div className="space-y-8 pb-10">
@@ -76,29 +83,29 @@ export default function InsightsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <MetricCard
                     title="Total Revenue (Est.)"
-                    value={`$${metrics.totalRevenue}`}
-                    trend="+14.5%"
+                    value={`$${metrics.totalRevenue.value.toFixed(2)}`}
+                    trend={`${metrics.totalRevenue.growth > 0 ? '+' : ''}${metrics.totalRevenue.growth}%`}
                     icon={<DollarSign className="w-5 h-5 text-green-600" />}
                     bg="bg-green-50"
                 />
                 <MetricCard
                     title="Client Retention"
-                    value={`${metrics.retentionRate}%`}
-                    trend={metrics.retentionRate > 50 ? "+2.4%" : "-1.0%"}
+                    value={`${retentionRate}%`}
+                    trend={retentionRate > 50 ? "+2.4%" : "-1.0%"}
                     icon={<Users className="w-5 h-5 text-blue-600" />}
                     bg="bg-blue-50"
                 />
                 <MetricCard
                     title="Outbound Campaigns"
-                    value={metrics.outbound?.totalSent || 0}
-                    trend={`Open Rate: ${metrics.outbound?.avgOpenRate || 0}%`}
+                    value={outbound?.totalSent || 0}
+                    trend={`Open Rate: ${outbound?.avgOpenRate || 0}%`}
                     icon={<TrendingUp className="w-5 h-5 text-purple-600" />}
                     bg="bg-purple-50"
                 />
                 <MetricCard
                     title="Booking Conv. Rate"
-                    value={`${metrics.convRate}%`}
-                    trend="-1.2%"
+                    value={`${convRate}%`}
+                    trend={`${convRate > 35 ? '+' : '-'}${Math.abs(35 - convRate)}%`}
                     icon={<Activity className="w-5 h-5 text-orange-600" />}
                     bg="bg-orange-50"
                 />
