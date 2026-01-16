@@ -82,7 +82,7 @@ router.post('/register', registerLimiter, async (req, res) => {
 
             hashedPassword = await bcrypt.hash(password, 10);
         } catch(err){
-            console.log('Validation error:', err);
+            console.log('Validation error is:', err);
             return res.status(400).json({ error: err.errors ? err.errors : err.message });
         }
 
