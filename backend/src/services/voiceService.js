@@ -24,20 +24,33 @@ class VoiceService {
         this.sessions = new Map();
     }
 
-    getGreeting(companyName, timezone = 'UTC') {
-        const hour = parseInt(new Intl.DateTimeFormat('en-US', {
+    async getGreeting(tenantId, timezone = 'UTC') {
+        try {
+            // Fetch tenant's custom welcome message
+            const tenant = await prisma.tenant.findUnique({
+                where: { id: tenantId },
+                select: { aiWelcomeMessage: true }
+            });
+
+             const hour = parseInt(new Intl.DateTimeFormat('en-US', {
             hour: 'numeric',
             hour12: false,
             timeZone: timezone || 'UTC'
         }).format(new Date()));
 
         let greeting = 'Hello';
-
         if (hour < 12) greeting = 'Good morning';
         else if (hour < 18) greeting = 'Good afternoon';
         else greeting = 'Good evening';
+            // Use custom welcome message if set, otherwise fall back to generic greeting
+            if (tenant?.aiWelcomeMessage) {
+                return `${greeting}, ${tenant.aiWelcomeMessage}`;
+            }
+        } catch (error) {
+            console.error('[VoiceService] Error fetching custom greeting:', error.message);
+        }
 
-        return `${greeting}, welcome to ${companyName}. How may I help you today?`;
+        return 'Hello, thank you for calling. How can I assist you today?';
     }
 
     async getPricingContext(tenantId) {
@@ -388,9 +401,9 @@ RESTRICTIONS
             }));
 
             // Send greeting after a short delay
-            setTimeout(() => {
+            setTimeout(async () => {
                 if (openAiWs.readyState === WebSocket.OPEN) {
-                    const personalizedGreeting = this.getGreeting(aiName, tenant?.timezone);
+                    const personalizedGreeting = await this.getGreeting(tenant.id, tenant?.timezone);
                     console.log('[VoiceService] Sending greeting:', personalizedGreeting);
                     openAiWs.send(JSON.stringify({
                         type: 'response.create',
@@ -647,8 +660,8 @@ RESTRICTIONS
             }
 
             // Build greeting/script
-            const greeting = this.getGreeting(tenant.aiName || tenant.name, tenant.timezone);
-            const script = tenant.aiWelcomeMessage || greeting;
+            const greeting = await this.getGreeting(tenantId, tenant.timezone);
+            const script = greeting;
 
             // Make the call via Twilio
             const call = await twilioService.makeCall(tenantId, phoneNumber, script, customData);
