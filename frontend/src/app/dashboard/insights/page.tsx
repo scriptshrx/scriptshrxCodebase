@@ -16,12 +16,13 @@ export default function InsightsPage() {
 
     const fetchInsights = async () => {
         const token = localStorage.getItem('token');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
         try {
             const [insightsRes, registrationRes] = await Promise.all([
-                fetch('/api/insights', {
+                fetch(`${apiUrl}/api/insights`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }),
-                fetch('/api/insights/user-registrations', {
+                fetch(`${apiUrl}/api/insights/user-registrations`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
             ]);
@@ -36,18 +37,29 @@ export default function InsightsPage() {
             if (insightsRes.ok) {
                 const contentType = insightsRes.headers.get("content-type");
                 if (contentType && contentType.indexOf("application/json") !== -1) {
-                    setData(await insightsRes.json());
+                    const insightsData = await insightsRes.json();
+                    console.log('Insights data received:', insightsData);
+                    setData(insightsData);
                 } else {
                     console.warn('Received non-JSON response from /api/insights');
+                    setData(null);
                 }
+            } else {
+                const errorText = await insightsRes.text();
+                console.error('Insights API error:', insightsRes.status, errorText);
+                setData(null);
             }
 
             if (registrationRes.ok) {
                 const regData = await registrationRes.json();
+                console.log('Registration data received:', regData);
                 setRegistrationData(regData.registrationData || []);
+            } else {
+                console.error('Registration API error:', registrationRes.status);
             }
         } catch (error) {
             console.error('Fetch error:', error);
+            setData(null);
         } finally {
             setLoading(false);
         }

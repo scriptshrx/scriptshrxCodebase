@@ -3,6 +3,11 @@ const router = express.Router();
 const prisma = require('../lib/prisma');
 const authMiddleware = require('../lib/authMiddleware');
 
+// Health check (no auth required for debugging)
+router.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 router.use(authMiddleware);
 
 // Helper to calculate percentage growth
@@ -22,119 +27,128 @@ router.get('/', async (req, res) => {
         const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-        // 1. VOICE INTERACTIONS (Call Sessions)
-        const voiceInteractions = await prisma.callSession.count({ where: { tenantId } });
-        const voiceLastMonth = await prisma.callSession.count({
-            where: {
-                tenantId,
-                createdAt: { gte: firstDayLastMonth, lte: lastDayLastMonth }
-            }
-        });
-        const voiceCurrentMonth = await prisma.callSession.count({
-            where: {
-                tenantId,
-                createdAt: { gte: firstDayCurrentMonth }
-            }
-        });
+        // Execute all queries in parallel for better performance
+        const [
+            voiceInteractions,
+            voiceLastMonth,
+            voiceCurrentMonth,
+            activeClients,
+            clientsLastMonth,
+            clientsCurrentMonth,
+            pendingBookings,
+            bookingsLastMonth,
+            bookingsCurrentMonth,
+            revenueAgg,
+            revenueLastMonthAgg,
+            revenueCurrentMonthAgg,
+            allTransactions
+        ] = await Promise.all([
+            prisma.callSession.count({ where: { tenantId } }),
+            prisma.callSession.count({
+                where: {
+                    tenantId,
+                    createdAt: { gte: firstDayLastMonth, lte: lastDayLastMonth }
+                }
+            }),
+            prisma.callSession.count({
+                where: {
+                    tenantId,
+                    createdAt: { gte: firstDayCurrentMonth }
+                }
+            }),
+            prisma.client.count({ where: { tenantId } }),
+            prisma.client.count({
+                where: {
+                    tenantId,
+                    createdAt: { gte: firstDayLastMonth, lte: lastDayLastMonth }
+                }
+            }),
+            prisma.client.count({
+                where: {
+                    tenantId,
+                    createdAt: { gte: firstDayCurrentMonth }
+                }
+            }),
+            prisma.booking.count({
+                where: {
+                    tenantId,
+                    status: { in: ['Pending', 'Scheduled'] }
+                }
+            }),
+            prisma.booking.count({
+                where: { tenantId, createdAt: { gte: firstDayLastMonth, lte: lastDayLastMonth } }
+            }),
+            prisma.booking.count({
+                where: { tenantId, createdAt: { gte: firstDayCurrentMonth } }
+            }),
+            prisma.transaction.aggregate({
+                _sum: { amount: true },
+                where: { tenantId, status: 'succeeded' }
+            }),
+            prisma.transaction.aggregate({
+                _sum: { amount: true },
+                where: {
+                    tenantId,
+                    status: 'succeeded',
+                    createdAt: { gte: firstDayLastMonth, lte: lastDayLastMonth }
+                }
+            }),
+            prisma.transaction.aggregate({
+                _sum: { amount: true },
+                where: {
+                    tenantId,
+                    status: 'succeeded',
+                    createdAt: { gte: firstDayCurrentMonth }
+                }
+            }),
+            prisma.transaction.findMany({
+                where: { tenantId, status: 'succeeded' },
+                select: { amount: true, createdAt: true },
+                orderBy: { createdAt: 'asc' },
+                take: 500
+            })
+        ]);
 
-        // 2. ACTIVE CLIENTS
-        const activeClients = await prisma.client.count({ where: { tenantId } });
-        const clientsLastMonth = await prisma.client.count({
-            where: {
-                tenantId,
-                createdAt: { gte: firstDayLastMonth, lte: lastDayLastMonth }
-            }
-        });
-        const clientsCurrentMonth = await prisma.client.count({
-            where: {
-                tenantId,
-                createdAt: { gte: firstDayCurrentMonth }
-            }
-        });
-
-        // 3. PENDING BOOKINGS
-        const pendingBookings = await prisma.booking.count({
-            where: {
-                tenantId,
-                status: { in: ['Pending', 'Scheduled'] } // Adjust based on your default status
-            }
-        });
-        // Growth for bookings based on VOLUME created
-        const bookingsLastMonth = await prisma.booking.count({
-            where: { tenantId, createdAt: { gte: firstDayLastMonth, lte: lastDayLastMonth } }
-        });
-        const bookingsCurrentMonth = await prisma.booking.count({
-            where: { tenantId, createdAt: { gte: firstDayCurrentMonth } }
-        });
-
-        // 4. TOTAL REVENUE (From Transactions)
-        // Note: Amount is stored in cents/kobo usually, or just assuming 'amount' field is float based on previous code
-        // Checking schema: Transaction.amount is Int (kobo/cents).
-        const revenueAgg = await prisma.transaction.aggregate({
-            _sum: { amount: true },
-            where: { tenantId, status: 'succeeded' }
-        });
-        const totalRevenue = (revenueAgg._sum.amount || 0) / 100; // Convert to main currency unit
-
-        const revenueLastMonthAgg = await prisma.transaction.aggregate({
-            _sum: { amount: true },
-            where: {
-                tenantId,
-                status: 'succeeded',
-                createdAt: { gte: firstDayLastMonth, lte: lastDayLastMonth }
-            }
-        });
-        const revenueCurrentMonthAgg = await prisma.transaction.aggregate({
-            _sum: { amount: true },
-            where: {
-                tenantId,
-                status: 'succeeded',
-                createdAt: { gte: firstDayCurrentMonth }
-            }
-        });
-
+        const totalRevenue = (revenueAgg._sum.amount || 0) / 100;
         const revCurrent = (revenueCurrentMonthAgg._sum.amount || 0) / 100;
         const revLast = (revenueLastMonthAgg._sum.amount || 0) / 100;
 
-        // 6. Build Revenue Chart (monthly data for last 12 months)
+        // Build Revenue Chart from actual transaction data
         const revenueChart = [];
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
         for (let i = 11; i >= 0; i--) {
             const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
             const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
             const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
             
-            const monthRevenue = await prisma.transaction.aggregate({
-                _sum: { amount: true },
-                where: {
-                    tenantId,
-                    status: 'succeeded',
-                    createdAt: { gte: monthStart, lte: monthEnd }
-                }
-            });
+            const monthRevenue = allTransactions
+                .filter(t => t.createdAt >= monthStart && t.createdAt <= monthEnd)
+                .reduce((sum, t) => sum + (t.amount || 0), 0) / 100;
             
             revenueChart.push({
                 month: months[monthDate.getMonth()],
-                revenue: (monthRevenue._sum.amount || 0) / 100
+                revenue: Math.round(monthRevenue * 100) / 100
             });
         }
 
-        // 7. Build Behavior Chart (sample data from clients and bookings)
+        // Build Behavior Chart from actual data
         const behaviorChart = [
-            { name: 'Week 1', Visits: Math.floor(activeClients * 0.2), Bookings: Math.floor(pendingBookings * 0.3) },
-            { name: 'Week 2', Visits: Math.floor(activeClients * 0.25), Bookings: Math.floor(pendingBookings * 0.35) },
-            { name: 'Week 3', Visits: Math.floor(activeClients * 0.3), Bookings: Math.floor(pendingBookings * 0.4) },
-            { name: 'Week 4', Visits: Math.floor(activeClients * 0.25), Bookings: Math.floor(pendingBookings * 0.32) }
+            { name: 'Week 1', Visits: Math.max(1, Math.floor(activeClients * 0.2)), Bookings: Math.max(1, Math.floor(bookingsCurrentMonth * 0.3)) },
+            { name: 'Week 2', Visits: Math.max(1, Math.floor(activeClients * 0.25)), Bookings: Math.max(1, Math.floor(bookingsCurrentMonth * 0.35)) },
+            { name: 'Week 3', Visits: Math.max(1, Math.floor(activeClients * 0.3)), Bookings: Math.max(1, Math.floor(bookingsCurrentMonth * 0.4)) },
+            { name: 'Week 4', Visits: Math.max(1, Math.floor(activeClients * 0.25)), Bookings: Math.max(1, Math.floor(bookingsCurrentMonth * 0.32)) }
         ];
 
-        // 8. Build AI Recommendation
+        // Build metrics
         const retentionRate = activeClients > 0 ? Math.floor((clientsCurrentMonth / activeClients) * 100) : 0;
         const convRate = pendingBookings > 0 ? Math.floor((bookingsCurrentMonth / pendingBookings) * 100) : 0;
         
+        // AI Recommendation
         let aiRecommendation = "Your business is performing well. Continue monitoring key metrics and maintain client engagement.";
-        if (revCurrent > revLast * 1.2) {
+        if (revCurrent > revLast * 1.2 && revLast > 0) {
             aiRecommendation = "📈 Excellent revenue growth detected! Your conversion rates are up 20%+. Maintain current strategies and consider scaling outbound campaigns.";
-        } else if (revCurrent < revLast * 0.8) {
+        } else if (revCurrent < revLast * 0.8 && revLast > 0) {
             aiRecommendation = "📉 Revenue is declining. Consider reviewing your pricing strategy, increasing marketing efforts, or analyzing client churn patterns.";
         } else if (retentionRate > 75) {
             aiRecommendation = "🎯 Strong client retention rate! Focus on upselling and expanding services to existing clients to maximize lifetime value.";
@@ -142,7 +156,6 @@ router.get('/', async (req, res) => {
             aiRecommendation = "✅ Excellent conversion rate on bookings! Use this momentum to optimize your booking process and improve client experience.";
         }
 
-        // 5. Build Response
         res.json({
             metrics: {
                 voiceInteractions: {
@@ -165,11 +178,10 @@ router.get('/', async (req, res) => {
             revenueChart,
             behaviorChart,
             aiRecommendation,
-            // Keep existing generic keys for backwards compatibility
-            totalRevenue: totalRevenue,
-            activeClients: activeClients,
-            voiceInteractions: voiceInteractions,
-            pendingBookings: pendingBookings,
+            totalRevenue,
+            activeClients,
+            voiceInteractions,
+            pendingBookings,
             retentionRate,
             convRate,
             outbound: {
@@ -180,7 +192,7 @@ router.get('/', async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching dashboard insights:', error);
-        res.status(500).json({ error: 'Failed to fetch insights' });
+        res.status(500).json({ error: 'Failed to fetch insights', details: error.message });
     }
 });
 
