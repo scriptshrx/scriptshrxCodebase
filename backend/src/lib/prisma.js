@@ -15,8 +15,8 @@ function getPrismaUrl() {
     const separator = url.includes('?') ? '&' : '?';
     // Add connection timeout and statement cache settings
     let fullUrl = url.includes('statement_cache_size') ? url : `${url}${separator}statement_cache_size=0`;
-    // Add connection timeout (5 seconds) and statement timeout (10 seconds)
-    fullUrl = fullUrl.includes('connect_timeout') ? fullUrl : `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}connect_timeout=5&statement_timeout=10000`;
+    // Add connection pool settings: 20 connection limit, 5 second timeout
+    fullUrl = fullUrl.includes('connect_timeout') ? fullUrl : `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}connect_timeout=5&connection_limit=20&pool_timeout=5`;
     return fullUrl;
 }
 
