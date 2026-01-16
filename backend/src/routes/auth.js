@@ -229,8 +229,10 @@ router.post('/register', registerLimiter, async (req, res) => {
                 html: welcomeMail
             });
             console.log('Welcome email sent to:', email);*/
-            const welcomeMail = welcomeMailTemplate.replace('name', name);
-            console.log('The email html is:', welcomeMail);
+            const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://scriptishrx.com';
+            let welcomeMail = welcomeMailTemplate.replace('name', name);
+            welcomeMail = welcomeMail.replace('/dashboard', `${frontendUrl}/dashboard`);
+            console.log('The email html is being sent with dashboard URL:', `${frontendUrl}/dashboard`);
 
             const response = await client.sendMail({
                 from: {

@@ -69,12 +69,12 @@ create table if not exists users (
   password text not null,
   name text,
   role text default 'MEMBER' check (role in ('SUPER_ADMIN', 'OWNER', 'ADMIN', 'MEMBER', 'SUBSCRIBER')),
-  roleId uuid references roles(id) on delete set null,
-  tenantId uuid references tenants(id) on delete cascade not null,
-  avatarUrl text,
-  phoneNumber text,
-  createdAt timestamp with time zone default timezone('utc'::text, now()) not null,
-  updatedAt timestamp with time zone default timezone('utc'::text, now()) not null
+  role_id uuid references roles(id) on delete set null,
+  tenant_id uuid references tenants(id) on delete cascade not null,
+  avatar_url text,
+  phone_number text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 -- Clients Table
