@@ -16,7 +16,7 @@ export default function InsightsPage() {
 
     const fetchInsights = async () => {
         const token = localStorage.getItem('token');
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://scriptshrxcodebase.onrender.com';
         try {
             const [insightsRes, registrationRes] = await Promise.all([
                 fetch(`${apiUrl}/api/insights`, {
