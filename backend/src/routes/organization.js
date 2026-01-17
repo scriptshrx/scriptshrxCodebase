@@ -94,7 +94,7 @@ router.post('/invite',
             }
 
             // Validate role
-            const validRoles = ['ADMIN', 'MANAGER', 'MEMBER'];
+            const validRoles = ['SUPER_ADMIN', 'ADMIN', 'MEMBER'];
             if (!validRoles.includes(role)) {
                 return res.status(400).json({
                     success: false,
@@ -497,7 +497,7 @@ router.patch('/team/:userId/role',
             }
 
             // Validate role
-            const validRoles = ['ADMIN', 'MANAGER', 'MEMBER'];
+            const validRoles = ['SUPER_ADMIN', 'ADMIN', 'MEMBER'];
             if (!validRoles.includes(role)) {
                 return res.status(400).json({
                     success: false,

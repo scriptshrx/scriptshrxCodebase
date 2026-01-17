@@ -571,8 +571,8 @@ export default function ClientsPage() {
                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50"
                                     >
                                         <option value="MEMBER">Member</option>
-                                        <option value="MANAGER">Manager</option>
                                         <option value="ADMIN">Admin</option>
+                                        <option value="SUPER_ADMIN">Super Admin</option>
                                     </select>
                                 </div>
 
