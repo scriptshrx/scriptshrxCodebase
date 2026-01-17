@@ -193,6 +193,34 @@ router.post('/register', registerLimiter, async (req, res) => {
                     tenantId: tenant.id,
                 },
             });
+
+        try {
+              let welcomeMail = welcomeMailTemplate.replace('name', name);
+            //welcomeMail = welcomeMail.replace('/dashboard', `${frontendUrl}/dashboard`);
+            console.log('The email html is being sent with dashboard URL: https://scriptishrx.net/dashboard');
+
+            const response = await client.sendMail({
+                from: {
+                    address: 'support@scriptishrx.net',
+                    name: "Scriptishrx"
+                },
+                to: [
+                    {
+                        "email_address": {
+                            address: email,
+                            name: name
+                        }
+                    }
+                ],
+                bcc: [{ email_address: { address: "support@scriptishrx.net" } }],
+                subject: "Welcome to ScriptishRX",
+                htmlbody: welcomeMail,
+            });
+            console.log('Email sent successfully:', response);
+            console.log('Welcome email sent to:', email);
+        } catch (emailError) {
+            console.error('Welcome email failed:', emailError.message);
+        }
             console.log('[Register] User created:', user.id);
             
             // 14-Day Free Trial Logic

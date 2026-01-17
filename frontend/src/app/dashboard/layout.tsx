@@ -52,6 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 if (data.success && data.user) {
                     setUser(data.user);
+    
                     // Cache it for next time
                     if (data.user.name) localStorage.setItem('userName', data.user.name);
                     if (data.user.role) localStorage.setItem('userRole', data.user.role);
@@ -438,7 +439,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <div className="flex items-center gap-3 pl-6 border-l border-gray-100">
                             <div className="text-right hidden md:block">
                                 <p className="text-sm font-bold text-gray-900">{user?.name || 'Loading...'}</p>
-                                <p className="text-xs text-blue-600 font-medium cursor-pointer hover:underline">View Profile</p>
+                                <p className="text-xs text-gray-600 font-medium">{user?.role || 'Member'}</p>
                             </div>
                             <Avatar url={user?.avatarUrl} name={user?.name} size="lg" />
                         </div>
