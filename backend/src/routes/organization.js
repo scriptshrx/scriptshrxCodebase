@@ -102,7 +102,7 @@ router.post('/invite',
                 });
             }
 
-            // Check if user already exists in this organization
+            // Check if user already exists in the organization
             const existingUser = await prisma.user.findFirst({
                 where: {
                     email,
