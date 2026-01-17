@@ -1,9 +1,8 @@
 import axios from 'axios';
 
 const getBaseUrl = () => {
-    if (typeof window === 'undefined') return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    if (process.env.NODE_ENV === 'development') return 'http://localhost:5000/api';
-    return process.env.NEXT_PUBLIC_API_URL || '/api';
+
+    return 'https://scriptishrxcodebase.onrender.com';
 };
 
 const api = axios.create({
