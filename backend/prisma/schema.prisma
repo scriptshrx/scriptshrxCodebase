@@ -351,7 +351,7 @@ model Invite {
   expiresAt  DateTime
   acceptedAt DateTime?
   createdBy  String
-  createdByUser User?   @relation(fields: [createdBy], references: [id], onDelete: SetNull, name: "createdInvites")
+  createdByUser User?   @relation(fields: [createdBy], references: [id], onDelete: Cascade, name: "createdInvites")
   metadata   Json?     // Custom metadata: { inviteeName, inviteePhone, inviteeCountry }
   createdAt  DateTime  @default(now())
 
