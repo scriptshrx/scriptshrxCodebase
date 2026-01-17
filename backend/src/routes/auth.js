@@ -77,6 +77,12 @@ router.post('/register', registerLimiter, async (req, res) => {
             validated = registerSchema.parse(req.body);
             ({ email, password, name, companyName, location, timezone, inviteToken = undefined } = validated);
 
+            // If no password provided for invite registration, generate a temporary one
+            if (inviteToken && !password) {
+                const crypto = require('crypto');
+                password = crypto.randomBytes(16).toString('hex');
+            }
+
             const existingUser = await prisma.user.findUnique({ where: { email } });
             if (existingUser) return res.status(400).json({ error: 'User already exists' });
 
