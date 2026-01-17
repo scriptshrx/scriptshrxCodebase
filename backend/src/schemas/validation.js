@@ -16,9 +16,13 @@ const registerSchema = z.object({
     accountType: z.enum(['INDIVIDUAL', 'ORGANIZATION']).optional().default('ORGANIZATION'),
     location: z.string().optional(),
     timezone: z.string().optional(),
+    phone: z.string().optional(),
+    country: z.string().optional(),
+    role: z.string().optional(),
     inviteToken: z.string().optional()
 }).refine(data => {
-    if (data.accountType === 'ORGANIZATION' && !data.companyName) {
+    // Only require companyName for ORGANIZATION accounts when NOT via invite
+    if (data.accountType === 'ORGANIZATION' && !data.inviteToken && !data.companyName) {
         return false;
     }
     return true;
