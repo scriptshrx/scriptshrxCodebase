@@ -250,7 +250,7 @@ export default function ClientsPage() {
         try {
             const formData = new FormData();
             formData.append('file', inviteLogoFile);
-            formData.append('upload_preset', 'scriptishrx_upload');
+            formData.append('upload_preset', 'schools_upload');
 
             const response = await fetch('https://api.cloudinary.com/v1_1/dadvxxgl1/upload', {
                 method: 'POST',
