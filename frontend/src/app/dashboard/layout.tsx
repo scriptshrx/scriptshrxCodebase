@@ -35,31 +35,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         (async () => {
             try {
                 const token = localStorage.getItem('token');
-                const storedName = localStorage.getItem('userName');
-                const storedRole = localStorage.getItem('userRole');
-
-                if (storedName) {
-                    setUser({ name: storedName, email: '', avatarUrl: '', role: storedRole || '' });
-                }
-
+                
                 if (!token) {
                     setUser({ name: 'Guest User', email: '', avatarUrl: '' });
                     return;
                 }
 
-                // Use configured API client
-                const { data } = await import('@/lib/api').then(m => m.default.get('/settings'));
-
-                if (data.success && data.user) {
-                    setUser(data.user);
-    
-                    // Cache it for next time
-                    if (data.user.name) localStorage.setItem('userName', data.user.name);
-                    if (data.user.role) localStorage.setItem('userRole', data.user.role);
+                // Try to get full user object from localStorage first (stored during registration)
+                const storedUser = localStorage.getItem('user');
+                if (storedUser) {
+                    try {
+                        const parsedUser = JSON.parse(storedUser);
+                        if (parsedUser.name) {
+                            setUser(parsedUser);
+                            return;
+                        }
+                    } catch (parseErr) {
+                        console.error('Error parsing stored user:', parseErr);
+                    }
                 }
-            } catch (err) {
-                console.error('User fetch failed:', err);
-                // Use localStorage as fallback when API fails
+
+                // Fallback: use individual stored values
                 const storedName = localStorage.getItem('userName');
                 const storedRole = localStorage.getItem('userRole');
                 if (storedName) {
@@ -67,12 +63,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 } else {
                     setUser({ name: 'Guest User', email: '', avatarUrl: '' });
                 }
+            } catch (err) {
+                console.error('User initialization error:', err);
+                setUser({ name: 'Guest User', email: '', avatarUrl: '' });
             }
         })();
     }, []);
-
-    // Auto-close mobile nav when route changes
-    useEffect(() => setShowMobileMenu(false), [pathname]);
 
     // Click outside for dropdown + mobile sidebar
     useEffect(() => {
