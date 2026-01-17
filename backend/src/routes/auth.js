@@ -103,10 +103,6 @@ router.post('/register', registerLimiter, async (req, res) => {
                 return res.status(400).json({ error: 'Invalid invite token' });
             }
 
-            if (invite.acceptedAt) {
-                return res.status(400).json({ error: 'Invite has already been used' });
-            }
-
             if (new Date() > invite.expiresAt) {
                 return res.status(400).json({ error: 'Invite has expired' });
             }
