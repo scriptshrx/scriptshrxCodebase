@@ -241,10 +241,11 @@ export default function ClientsPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                // Add fields config and role to the invite link
-                const baseLink = data.invite.inviteLink;
+                // Build the invite link with correct frontend URL
+                const frontendUrl = typeof window !== 'undefined' ? window.location.origin : 'https://scriptshrxcodebase.onrender.com';
+                const inviteToken = data.invite.token;
                 const fieldsParam = btoa(JSON.stringify(inviteFieldsConfig));
-                const customLink = `${baseLink}&fields=${fieldsParam}&role=${inviteRoleConfig}`;
+                const customLink = `${frontendUrl}/register?invite=${inviteToken}&fields=${fieldsParam}&role=${inviteRoleConfig}`;
                 setGeneratedInviteLink(customLink);
                 showToast('Invite configuration generated!', 'success');
             } else {
