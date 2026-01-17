@@ -91,11 +91,11 @@ export default function ClientsPage() {
                 const data = await res.json();
                 if (data.success && data.organization) {
                     console.log('Org data:', data.organization);
-                    setOrganizationName(data.organization.companyName || 'Organization');
+                    setOrganizationName(data.organization.name || 'Organization');
                 }
             }
         } catch (error) {
-            console.error('Error fetching org info:', error);
+            console.error('Error fetching org info :', error);
             setOrganizationName('Organization');
         }
     };
