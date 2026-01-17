@@ -92,7 +92,6 @@ export default function LeadsPage() {
         try {
             await convertInboundCallToLead(id, { 
                 name: name || `Call from ${callerPhone}`,
-                phone: callerPhone,
                 notes: 'Auto-converted from inbound call'
             });
             
@@ -166,6 +165,7 @@ export default function LeadsPage() {
                     <Users className="w-4 h-4 inline mr-2" />
                     Team Members ({teamMembers.length})
                 </button>
+            </div>
 
             {/* Leads Table */}
             {tabView === 'leads' && (
