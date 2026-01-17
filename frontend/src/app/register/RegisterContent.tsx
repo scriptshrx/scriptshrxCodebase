@@ -121,7 +121,7 @@ export default function RegisterContent() {
             localStorage.setItem('user', JSON.stringify(response.data.user));
             console.log('Registration successful :', response.data);
 
-            if(isInviteRegistration){alert('You have successfully joined!');return}
+            if(isInviteRegistration){alert('You have successfully joined');return}
             router.push('/dashboard');
         } catch (err: any) {
             console.error('Registration error:', err);
