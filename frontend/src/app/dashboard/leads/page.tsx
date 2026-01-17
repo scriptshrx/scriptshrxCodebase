@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function LeadsPage() {
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
-    const [tabView, setTabView] = useState<'inbound' | 'team'>('inbound');
+    const [tabView, setTabView] = useState<'inbound' | 'team'>('team');
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [callingId, setCallingId] = useState<string | null>(null);
     const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -84,8 +84,8 @@ export default function LeadsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">Inbound Calls & Team</h1>
-                    <p className="text-zinc-500 mt-1">Manage inbound calls and team members.</p>
+                    <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">Leads & Inbound Calls</h1>
+                    <p className="text-zinc-500 mt-1">Manage leads and unbound calls.</p>
                 </div>
 
                 <div className="flex items-center gap-3">
