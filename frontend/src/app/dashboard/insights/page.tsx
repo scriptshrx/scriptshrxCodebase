@@ -84,6 +84,11 @@ export default function InsightsPage() {
 
     const { metrics, revenueChart, behaviorChart, aiRecommendation, retentionRate, convRate, outbound } = data;
 
+    // Calculate total users from registration data
+    const totalUsers = registrationData.length > 0 ? registrationData[registrationData.length - 1].totalUsers : 0;
+    const previousTotalUsers = registrationData.length > 1 ? registrationData[registrationData.length - 2].totalUsers : 0;
+    const userGrowth = previousTotalUsers > 0 ? Math.round(((totalUsers - previousTotalUsers) / previousTotalUsers) * 100) : 0;
+
     return (
         <div className="space-y-8 pb-10">
             <div>
@@ -100,19 +105,12 @@ export default function InsightsPage() {
                     icon={<DollarSign className="w-5 h-5 text-green-600" />}
                     bg="bg-green-50"
                 />
-                {/*<MetricCard
-                    title="Client Retention"
-                    value={`${retentionRate}%`}
-                    trend={retentionRate > 50 ? "+2.4%" : "-1.0%"}
+                <MetricCard
+                    title="Total Users"
+                    value={`${totalUsers}`}
+                    trend={`${userGrowth > 0 ? '+' : ''}${userGrowth}%`}
                     icon={<Users className="w-5 h-5 text-blue-600" />}
                     bg="bg-blue-50"
-                />*/}
-                <MetricCard
-                    title="Outbound Campaigns"
-                    value={outbound?.totalSent || 0}
-                    trend={`Open Rate: ${outbound?.avgOpenRate || 0}%`}
-                    icon={<TrendingUp className="w-5 h-5 text-purple-600" />}
-                    bg="bg-purple-50"
                 />
                 <MetricCard
                     title="Inbound Calls"

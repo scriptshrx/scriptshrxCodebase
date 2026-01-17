@@ -8,9 +8,67 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../lib/prisma');
 const crypto = require('crypto');
+const path = require('path');
+const fs = require('fs');
+const { SendMailClient } = require("zeptomail");
 const { authenticateToken } = require('../middleware/auth');
 const { checkPermission, requireOwnerOrAdmin, verifyTenantAccess } = require('../middleware/permissions');
 const { inviteLimiter, inviteVerifyLimiter } = require('../middleware/rateLimiting');
+
+// Initialize ZeptoMail client
+const ZEPTOMAIL_URL = "https://api.zeptomail.com/v1.1/email";
+const ZEPTOMAIL_KEY = process.env.ZEPTOMAIL_KEY;
+let mailClient = null;
+
+if (ZEPTOMAIL_KEY) {
+    mailClient = new SendMailClient({ url: ZEPTOMAIL_URL, token: ZEPTOMAIL_KEY });
+}
+
+// Load invite email template
+const inviteMailPath = path.join(process.cwd(), 'src', 'routes', 'inviteMail.html');
+const inviteMailTemplate = fs.existsSync(inviteMailPath) ? fs.readFileSync(inviteMailPath, 'utf8') : null;
+
+/**
+ * Helper function to send invite email
+ */
+async function sendInviteEmail(email, organizationName, inviteLink, inviterName, role) {
+    if (!mailClient || !inviteMailTemplate) {
+        console.warn('⚠️  ZeptoMail not configured or email template missing. Skipping email send.');
+        return false;
+    }
+
+    try {
+        const htmlContent = inviteMailTemplate
+            .replace('inviteeEmail', email)
+            .replace(/organizationName/g, organizationName)
+            .replace('inviteLinkPlaceholder', inviteLink)
+            .replace('inviterName', inviterName)
+            .replace('inviteRole', role);
+
+        const response = await mailClient.sendMail({
+            from: {
+                address: 'support@scriptishrx.net',
+                name: "ScriptishRX"
+            },
+            to: [
+                {
+                    "email_address": {
+                        address: email
+                    }
+                }
+            ],
+            bcc: [{ email_address: { address: "support@scriptishrx.net" } }],
+            subject: `Join ${organizationName} on ScriptishRX`,
+            htmlbody: htmlContent,
+        });
+
+        console.log('✅ Invite email sent successfully to:', email);
+        return true;
+    } catch (error) {
+        console.error('❌ Failed to send invite email:', error.message);
+        return false;
+    }
+}
 
 // ========== ORGANIZATION INVITES ==========
 
@@ -24,7 +82,7 @@ router.post('/invite',
     checkPermission('users', 'invite'),
     async (req, res) => {
         try {
-            const { email, role } = req.body;
+            const { email, role, metadata } = req.body;
             const tenantId = req.user?.tenantId;
             const invitedBy = req.user?.userId || req.user?.id;
 
@@ -83,7 +141,7 @@ router.post('/invite',
             const expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
-            // Create invite
+            // Create invite with optional metadata
             const invite = await prisma.invite.create({
                 data: {
                     email,
@@ -91,16 +149,28 @@ router.post('/invite',
                     token,
                     expiresAt,
                     createdBy: invitedBy,
-                    tenantId
+                    tenantId,
+                    metadata: metadata || null
                 },
                 include: {
-                    tenant: true
+                    tenant: true,
+                    createdByUser: {
+                        select: { name: true }
+                    }
                 }
             });
 
-            // TODO: Send invite email with token
-            // For now, return the invite link
+            // Send invite email
             const inviteLink = `${process.env.FRONTEND_URL}/register?invite=${token}`;
+            const inviterName = invite.createdByUser?.name || 'Your colleague';
+            
+            const emailSent = await sendInviteEmail(
+                email,
+                invite.tenant.name,
+                inviteLink,
+                inviterName,
+                role
+            );
 
             res.json({
                 success: true,
@@ -109,10 +179,14 @@ router.post('/invite',
                     email: invite.email,
                     role: invite.role,
                     expiresAt: invite.expiresAt,
-                    inviteLink, // In production, this should be sent via email
-                    organization: invite.tenant.name
+                    inviteLink,
+                    organization: invite.tenant.name,
+                    emailSent,
+                    metadata: invite.metadata
                 },
-                message: 'Invite created successfully. Send this link to the user.'
+                message: emailSent 
+                    ? 'Invite created and email sent successfully.' 
+                    : 'Invite created but email could not be sent. Share the link manually.'
             });
         } catch (error) {
             console.error('Error creating invite:', error);
@@ -209,6 +283,90 @@ router.delete('/invite/:inviteId',
             res.status(500).json({
                 success: false,
                 error: 'Failed to cancel invite'
+            });
+        }
+    }
+);
+
+/**
+ * POST /api/organization/invite/:inviteId/resend
+ * Resend an invite email
+ */
+router.post('/invite/:inviteId/resend',
+    inviteLimiter,
+    authenticateToken,
+    requireOwnerOrAdmin,
+    async (req, res) => {
+        try {
+            const { inviteId } = req.params;
+            const tenantId = req.user?.tenantId;
+
+            const invite = await prisma.invite.findUnique({
+                where: { id: inviteId },
+                include: {
+                    tenant: true,
+                    createdByUser: {
+                        select: { name: true }
+                    }
+                }
+            });
+
+            if (!invite) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Invite not found'
+                });
+            }
+
+            if (invite.tenantId !== tenantId) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Access denied'
+                });
+            }
+
+            if (invite.acceptedAt) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'This invite has already been accepted'
+                });
+            }
+
+            if (new Date() > invite.expiresAt) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'This invite has expired. Please create a new one.'
+                });
+            }
+
+            // Resend the invite email
+            const inviteLink = `${process.env.FRONTEND_URL}/register?invite=${invite.token}`;
+            const inviterName = invite.createdByUser?.name || 'Your colleague';
+
+            const emailSent = await sendInviteEmail(
+                invite.email,
+                invite.tenant.name,
+                inviteLink,
+                inviterName,
+                invite.role
+            );
+
+            if (!emailSent) {
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to send invite email'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Invite email resent successfully'
+            });
+        } catch (error) {
+            console.error('Error resending invite:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to resend invite'
             });
         }
     }

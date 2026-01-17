@@ -30,6 +30,21 @@ export default function ClientsPage() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', notes: '' });
 
+    // Configure Invite State
+    const [showConfigureInvite, setShowConfigureInvite] = useState(false);
+    const [organizationName, setOrganizationName] = useState('');
+    const [inviteFieldsConfig, setInviteFieldsConfig] = useState({
+        name: true,
+        email: true,
+        phone: false,
+        country: false,
+        role: false
+    });
+    const [inviteRoleConfig, setInviteRoleConfig] = useState('MEMBER');
+    const [generatedInviteLink, setGeneratedInviteLink] = useState('');
+    const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
+    const [generatingInvite, setGeneratingInvite] = useState(false);
+
     // Toast State
     const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
     const showToast = (message: string, type: 'success' | 'error') => setToast({ message, type });
@@ -62,8 +77,30 @@ export default function ClientsPage() {
         }
     };
 
+    const fetchOrganizationName = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/organization/info', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.organization) {
+                    setOrganizationName(data.organization.name || 'Organization');
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching org info:', error);
+            setOrganizationName('Organization');
+        }
+    };
+
     useEffect(() => {
         fetchClients();
+        fetchOrganizationName();
         const interval = setInterval(fetchClients, 10000); // Poll every 10s
         return () => clearInterval(interval);
     }, []);
@@ -179,6 +216,61 @@ export default function ClientsPage() {
         }
     };
 
+    const handleGenerateCustomInvite = async () => {
+        setGeneratingInvite(true);
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/organization/invite', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    email: `invite-${Date.now()}@temp.local`,
+                    role: inviteRoleConfig,
+                    metadata: {
+                        fieldsConfig: inviteFieldsConfig,
+                        configuredRole: inviteRoleConfig
+                    }
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                // Add fields config and role to the invite link
+                const baseLink = data.invite.inviteLink;
+                const fieldsParam = btoa(JSON.stringify(inviteFieldsConfig));
+                const customLink = `${baseLink}&fields=${fieldsParam}&role=${inviteRoleConfig}`;
+                setGeneratedInviteLink(customLink);
+                showToast('Invite configuration generated!', 'success');
+            } else {
+                const error = await res.json();
+                showToast(error.error || 'Failed to generate invite.', 'error');
+            }
+        } catch (error) {
+            console.error('Error generating invite:', error);
+            showToast('Network error occurred.', 'error');
+        } finally {
+            setGeneratingInvite(false);
+        }
+    };
+
+    const handleCopyInviteLink = () => {
+        navigator.clipboard.writeText(generatedInviteLink);
+        setInviteLinkCopied(true);
+        showToast('Invite link copied to clipboard!', 'success');
+        setTimeout(() => setInviteLinkCopied(false), 2000);
+    };
+
+    const handleOpenConfigureInvite = () => {
+        setInviteFieldsConfig({ name: true, email: true, phone: false, country: false, role: false });
+        setInviteRoleConfig('MEMBER');
+        setGeneratedInviteLink('');
+        setShowConfigureInvite(true);
+    };
+
     return (
         <div className="space-y-6 pb-10">
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
@@ -188,13 +280,30 @@ export default function ClientsPage() {
                     <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
                     <p className="text-gray-500">Manage your client base</p>
                 </div>
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="flex items-center px-4 py-2 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Client
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={handleOpenConfigureInvite}
+                        className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
+                    >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Configure Invite
+                    </button>
+                    <Link href="/invite">
+                        <button
+                            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                        >
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Invite Team
+                        </button>
+                    </Link>
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="flex items-center px-4 py-2 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Client
+                    </button>
+                </div>
             </div>
 
             {/* Client List */}
@@ -373,6 +482,184 @@ export default function ClientsPage() {
                     </div>
                 )
             }
+
+            {/* Configure Invite Modal */}
+            {showConfigureInvite && (
+                <div className="fixed inset-0 z-50 flex items-end justify-center">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setShowConfigureInvite(false)}
+                    />
+
+                    {/* Toast/Modal at Bottom */}
+                    <div className="relative bg-white rounded-t-3xl shadow-2xl w-full max-w-md p-8 max-h-[90vh] overflow-y-auto">
+                        <button
+                            onClick={() => setShowConfigureInvite(false)}
+                            className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        >
+                            <X className="w-5 h-5 text-gray-500" />
+                        </button>
+
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2 pr-8">Configure Invite</h2>
+                        <p className="text-gray-600 text-sm mb-6">Select which fields should appear in the invitation form</p>
+
+                        {!generatedInviteLink ? (
+                            <div className="space-y-4">
+                                {/* Organization Name (Read-only) */}
+                                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Organization</p>
+                                    <p className="text-lg font-semibold text-gray-900">{organizationName}</p>
+                                </div>
+
+                                <hr className="my-6" />
+
+                                {/* Field Toggles */}
+                                <div className="space-y-3">
+                                    <p className="text-sm font-semibold text-gray-700">Required Fields</p>
+
+                                    {/* Name Toggle */}
+                                    <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={inviteFieldsConfig.name}
+                                            onChange={(e) => setInviteFieldsConfig({ ...inviteFieldsConfig, name: e.target.checked })}
+                                            className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                        />
+                                        <div>
+                                            <p className="font-medium text-gray-900">Full Name</p>
+                                            <p className="text-xs text-gray-500">Ask for the invitee's name</p>
+                                        </div>
+                                    </label>
+
+                                    {/* Email Toggle */}
+                                    <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={inviteFieldsConfig.email}
+                                            onChange={(e) => setInviteFieldsConfig({ ...inviteFieldsConfig, email: e.target.checked })}
+                                            className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                        />
+                                        <div>
+                                            <p className="font-medium text-gray-900">Email</p>
+                                            <p className="text-xs text-gray-500">Ask for the invitee's email</p>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <hr className="my-6" />
+
+                                {/* Role Configuration Section */}
+                                <div className="space-y-3">
+                                    <p className="text-sm font-semibold text-gray-700">Assign Role</p>
+                                    <p className="text-xs text-gray-600">Select the role this invitee will have. They won't be able to change it.</p>
+                                    <select
+                                        value={inviteRoleConfig}
+                                        onChange={(e) => setInviteRoleConfig(e.target.value)}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50"
+                                    >
+                                        <option value="MEMBER">Member</option>
+                                        <option value="MANAGER">Manager</option>
+                                        <option value="ADMIN">Admin</option>
+                                    </select>
+                                </div>
+
+                                <hr className="my-6" />
+
+                                <div className="space-y-3">
+                                    <p className="text-sm font-semibold text-gray-700">Optional Fields</p>
+
+                                    {/* Phone Toggle */}
+                                    <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={inviteFieldsConfig.phone}
+                                            onChange={(e) => setInviteFieldsConfig({ ...inviteFieldsConfig, phone: e.target.checked })}
+                                            className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                        />
+                                        <div>
+                                            <p className="font-medium text-gray-900">Phone Number</p>
+                                            <p className="text-xs text-gray-500">Ask for the invitee's phone</p>
+                                        </div>
+                                    </label>
+
+                                    {/* Country Toggle */}
+                                    <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={inviteFieldsConfig.country}
+                                            onChange={(e) => setInviteFieldsConfig({ ...inviteFieldsConfig, country: e.target.checked })}
+                                            className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                        />
+                                        <div>
+                                            <p className="font-medium text-gray-900">Country</p>
+                                            <p className="text-xs text-gray-500">Ask for the invitee's country</p>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                {/* Generate Button */}
+                                <button
+                                    onClick={handleGenerateCustomInvite}
+                                    disabled={generatingInvite}
+                                    className="w-full mt-8 px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-colors"
+                                >
+                                    {generatingInvite ? 'Generating...' : 'Generate Invite Link'}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                                    <p className="text-sm font-semibold text-green-800">✓ Invite Link Generated!</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Invite Link (Click to copy)
+                                    </label>
+                                    <div
+                                        onClick={handleCopyInviteLink}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-600 break-all cursor-pointer hover:bg-gray-100 transition-colors font-mono max-h-24 overflow-y-auto"
+                                    >
+                                        {generatedInviteLink}
+                                    </div>
+                                    {inviteLinkCopied && (
+                                        <p className="text-xs text-green-600 mt-2 font-semibold">✓ Copied to clipboard!</p>
+                                    )}
+                                </div>
+
+                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
+                                    <p className="font-semibold mb-2">Configuration Summary:</p>
+                                    <div className="space-y-1">
+                                        <p><strong>Fields shown:</strong></p>
+                                        <ul className="space-y-1 ml-4">
+                                            {inviteFieldsConfig.name && <li>✓ Full Name</li>}
+                                            {inviteFieldsConfig.email && <li>✓ Email</li>}
+                                            {inviteFieldsConfig.phone && <li>✓ Phone Number</li>}
+                                            {inviteFieldsConfig.country && <li>✓ Country</li>}
+                                        </ul>
+                                        <p className="mt-2"><strong>Assigned role:</strong> {inviteRoleConfig} (read-only)</p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleCopyInviteLink}
+                                    className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors"
+                                >
+                                    {inviteLinkCopied ? '✓ Copied!' : 'Copy Link'}
+                                </button>
+
+                                <button
+                                    onClick={() => setShowConfigureInvite(false)}
+                                    className="w-full px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-xl transition-colors"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div >
     );
 }

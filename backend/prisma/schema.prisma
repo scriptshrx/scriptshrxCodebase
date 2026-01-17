@@ -90,6 +90,7 @@ model User {
   phoneNumber  String?
   notifications Notification[]
   transactions Transaction[]
+  createdInvites Invite[] @relation(name: "createdInvites")
   // Google Calendar integration fields
   googleAccessToken   String? @db.Text
   googleRefreshToken  String? @db.Text
@@ -350,6 +351,8 @@ model Invite {
   expiresAt  DateTime
   acceptedAt DateTime?
   createdBy  String
+  createdByUser User?   @relation(fields: [createdBy], references: [id], onDelete: SetNull, name: "createdInvites")
+  metadata   Json?     // Custom metadata: { inviteeName, inviteePhone, inviteeCountry }
   createdAt  DateTime  @default(now())
 
   @@index([token])
