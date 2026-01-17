@@ -135,7 +135,7 @@ export default function RegisterContent() {
             <div className="bg-white/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/50">
                 <div className="text-center mb-6">
                     <div className="flex justify-center mb-4">
-                        <img src={isInviteRegistration ? inviteLogo : "/logo.jpg"} alt="ScriptishRx" className="h-20 w-auto rounded-lg" />
+                        <img src={isInviteRegistration ? inviteLogo : "/logo.jpg"} alt="ScriptishRx" className="h-20 w-auto rounded-full" />
                     </div>
                     <p className="text-blue-600 font-medium">{isInviteRegistration ? `Join ${inviteCompanyName || 'Our Team'}` : "Create your account to get started."}</p>
                 </div>
