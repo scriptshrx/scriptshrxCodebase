@@ -90,7 +90,8 @@ export default function ClientsPage() {
             if (res.ok) {
                 const data = await res.json();
                 if (data.success && data.organization) {
-                    setOrganizationName(data.organization.name || 'Organization');
+                    console.log('Org data:', data.organization);
+                    setOrganizationName(data.organization.companyName || 'Organization');
                 }
             }
         } catch (error) {
