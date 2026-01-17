@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLeads } from '@/hooks/useLeads';
 import { useInboundCalls, deleteInboundCall, convertInboundCallToLead } from '@/hooks/useInboundCalls';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Search, UserPlus, Mail, Phone, Calendar, ArrowRight, ChevronLeft, ChevronRight, Trash2, PhoneCall, Loader2, Copy } from 'lucide-react';
+import { Search, UserPlus, Mail, Phone, Calendar, ArrowRight, ChevronLeft, ChevronRight, Trash2, PhoneCall, Loader2, Copy, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LeadsPage() {
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
-    const [tabView, setTabView] = useState<'leads' | 'inbound'>('leads');
+    const [tabView, setTabView] = useState<'leads' | 'inbound' | 'team'>('leads');
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [convertingId, setConvertingId] = useState<string | null>(null);
     const [callingId, setCallingId] = useState<string | null>(null);
+    const [teamMembers, setTeamMembers] = useState<any[]>([]);
     
     const { data, isLoading } = useLeads(page, 10, search);
     const { data: inboundData, isLoading: inboundLoading, refetch: refetchInbound } = useInboundCalls(page, 10, search);
@@ -23,6 +24,27 @@ export default function LeadsPage() {
     
     const inboundCalls = inboundData?.inboundCalls || [];
     const inboundPagination = inboundData?.pagination || { total: 0, totalPages: 1 };
+
+    useEffect(() => {
+        const fetchTeamMembers = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const res = await fetch('https://scriptshrxcodebase.onrender.com/api/organization/team', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.team) {
+                        setTeamMembers(data.team || []);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching team members:', error);
+            }
+        };
+        fetchTeamMembers();
+    }, []);
 
     const handleDeleteInbound = async (id: string) => {
         if (!confirm('Are you sure you want to delete this inbound call record?')) return;
@@ -133,7 +155,17 @@ export default function LeadsPage() {
                     <PhoneCall className="w-4 h-4 inline mr-2" />
                     Inbound Calls ({inboundPagination.total})
                 </button>
-            </div>
+                <button
+                    onClick={() => { setTabView('team'); setPage(1); }}
+                    className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                        tabView === 'team'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                            : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                    }`}
+                >
+                    <Users className="w-4 h-4 inline mr-2" />
+                    Team Members ({teamMembers.length})
+                </button>
 
             {/* Leads Table */}
             {tabView === 'leads' && (
@@ -409,6 +441,74 @@ export default function LeadsPage() {
                 </div>
             </GlassCard>
             )}
-        </div>
-    );
-}
+
+            {/* Team Members Table */}
+            {tabView === 'team' && (
+            <GlassCard className="!p-0 overflow-hidden border-zinc-200/50 shadow-xl shadow-zinc-200/20">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-zinc-50 border-b border-zinc-200">
+                                <th className="px-6 py-4 font-semibold text-zinc-900">Name</th>
+                                <th className="px-6 py-4 font-semibold text-zinc-900">Email</th>
+                                <th className="px-6 py-4 font-semibold text-zinc-900">Phone</th>
+                                <th className="px-6 py-4 font-semibold text-zinc-900">Role</th>
+                                <th className="px-6 py-4 font-semibold text-zinc-900">Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-200">
+                            {teamMembers.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center">
+                                        <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                                        <p className="text-zinc-500 font-medium">No team members</p>
+                                    </td>
+                                </tr>
+                            ) : (
+                                teamMembers.map((member) => (
+                                    <tr key={member.id} className="hover:bg-zinc-50/50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="font-medium text-zinc-900">{member.name}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2 text-zinc-600">
+                                                <Mail className="w-4 h-4" />
+                                                {member.email}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {member.phoneNumber ? (
+                                                <div className="flex items-center gap-2 text-zinc-600">
+                                                    <Phone className="w-4 h-4" />
+                                                    {member.phoneNumber}
+                                                </div>
+                                            ) : (
+                                                <span className="text-zinc-400">—</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
+                                                member.role === 'ADMIN' 
+                                                    ? 'bg-red-100 text-red-700' 
+                                                    : member.role === 'MEMBER' 
+                                                    ? 'bg-blue-100 text-blue-700' 
+                                                    : 'bg-zinc-100 text-zinc-700'
+                                            }`}>
+                                                {member.role}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-zinc-600 text-sm">
+                                            {new Date(member.createdAt).toLocaleDateString('en-US', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                year: 'numeric'
+                                            })}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </GlassCard>
+            )}
