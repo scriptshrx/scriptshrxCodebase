@@ -583,7 +583,7 @@ export default function ClientsPage() {
                                             <img 
                                                 src={inviteLogoPreview} 
                                                 alt="Logo Preview" 
-                                                className="h-20 mx-auto object-contain"
+                                                className="h-20 mx-auto object-contain rounded-lg"
                                             />
                                             <button
                                                 onClick={() => {
