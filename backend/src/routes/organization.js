@@ -160,8 +160,18 @@ router.post('/invite',
                 }
             });
 
-            // Send invite email
-            const inviteLink = `${process.env.FRONTEND_URL}/register?invite=${token}`;
+            // Build invite link with fields configuration
+            let inviteLink = `https://scriptishrx.net/register?invite=${token}`;
+            
+            // Add fields configuration if provided in metadata
+            if (metadata?.fieldsConfig) {
+                const fieldsParam = Buffer.from(JSON.stringify(metadata.fieldsConfig)).toString('base64');
+                inviteLink += `&fields=${fieldsParam}`;
+            }
+            
+            // Add role parameter
+            inviteLink += `&role=${role}`;
+            
             const inviterName = invite.createdByUser?.name || 'Your colleague';
             
             const emailSent = await sendInviteEmail(
