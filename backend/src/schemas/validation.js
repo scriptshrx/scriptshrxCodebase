@@ -10,8 +10,8 @@ const PlanEnum = ['Basic', 'Intermediate', 'Advanced'];
 const registerSchema = z.object({
     email: z.string().email(),
     password: z.string()
-        .min(8, 'Password must be at least 8 characters')
-        .optional(),
+        .optional()
+        .refine(val => !val || val.length >= 8, 'Password must be at least 8 characters'),
     name: z.string().min(2),
     companyName: z.string().optional(),
     accountType: z.enum(['INDIVIDUAL', 'ORGANIZATION']).optional().default('ORGANIZATION'),
