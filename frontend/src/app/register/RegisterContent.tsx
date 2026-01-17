@@ -33,6 +33,7 @@ export default function RegisterContent() {
     });
     const [configuredRole, setConfiguredRole] = useState('MEMBER');
     const [inviteLogo, setInviteLogo] = useState<string | null>(null);
+    const [inviteCompanyName, setInviteCompanyName] = useState<string | null>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -73,15 +74,19 @@ export default function RegisterContent() {
         try {
             // Fetch the invite details from backend to get metadata
             const response = await axios.get(`https://scriptshrxcodebase.onrender.com/api/organization/invite/verify/${token}`);
-            if (response.data && response.data.invite && response.data.invite.metadata) {
-                const logoUrl = response.data.invite.metadata.logoUrl;
+            if (response.data && response.data.invite) {
+                const logoUrl = response.data.invite.metadata?.logoUrl;
                 if (logoUrl) {
                     setInviteLogo(logoUrl);
+                }
+                // Get company name from organization field
+                if (response.data.invite.organization) {
+                    setInviteCompanyName(response.data.invite.organization);
                 }
             }
         } catch (error) {
             console.error('Failed to fetch invite metadata:', error);
-            // Logo is optional, don't fail registration
+            // Logo and company name are optional, don't fail registration
         }
     };
 
@@ -128,11 +133,11 @@ export default function RegisterContent() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
             <div className="bg-white/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/50">
-                <div className="text-center mb-6">
+                <div className="text-center rounded-full overflow-hidden mb-6">
                     <div className="flex justify-center mb-4">
-                        <img src={inviteLogo || "/logo.jpg"} alt="ScriptishRx" className="h-20 w-auto" />
+                        <img src={isInviteRegistration ? inviteLogo : "/logo.jpg"} alt="ScriptishRx" className="h-20 w-auto" />
                     </div>
-                    <p className="text-blue-600 font-medium">Create your account to get started.</p>
+                    <p className="text-blue-600 font-medium">{isInviteRegistration ? `Join ${inviteCompanyName || 'Our Team'}` : "Create your account to get started."}</p>
                 </div>
 
                 {error && (
@@ -278,14 +283,14 @@ export default function RegisterContent() {
                     </button>
                 </form>
 
-                <div className="mt-8 text-center">
+               {!isInviteRegistration&& <div className="mt-8 text-center">
                     <p className="text-gray-500 text-sm">
                         Already have an account?{' '}
                         <Link href="/login" className="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-colors">
                             Sign in
                         </Link>
                     </p>
-                </div>
+                </div>}
             </div>
         </div>
     );

@@ -571,6 +571,64 @@ export default function ClientsPage() {
                         </button>
 
                         <h2 className="text-2xl font-bold text-gray-900 mb-2 pr-8">Configure Invite</h2>
+
+                         {/* Logo Upload Section */}
+                                <div className="space-y-3">
+                                    <p className="text-sm font-semibold text-gray-700">Organization Logo</p>
+                                    <p className="text-xs text-gray-600">Upload a logo to display on the invitation form</p>
+                                    
+                                    {/* Logo Preview */}
+                                    {inviteLogoPreview && (
+                                        <div className="relative p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                            <img 
+                                                src={inviteLogoPreview} 
+                                                alt="Logo Preview" 
+                                                className="h-20 mx-auto object-contain"
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    setInviteLogoFile(null);
+                                                    setInviteLogoPreview('');
+                                                    setInviteLogoUrl('');
+                                                }}
+                                                className="absolute top-2 right-2 p-1 bg-red-100 hover:bg-red-200 rounded-full transition-colors"
+                                            >
+                                                <X className="w-4 h-4 text-red-600" />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Upload Button */}
+                                    <button
+                                        onClick={handleLogoUploadClick}
+                                        className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-colors text-gray-600 font-medium"
+                                    >
+                                        + Select Logo
+                                    </button>
+
+                                    {/* Upload to Cloudinary Button */}
+                                    {inviteLogoPreview && !inviteLogoUrl && (
+                                        <button
+                                            onClick={handleUploadLogoToCloudinary}
+                                            disabled={uploadingLogo}
+                                            className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-colors"
+                                        >
+                                            {uploadingLogo ? 'Uploading Logo...' : 'Upload Logo to Cloud'}
+                                        </button>
+                                    )}
+
+                                    {inviteLogoUrl && (
+                                        <div className="p-3 bg-green-50 border border-green-200 rounded-xl">
+                                            <p className="text-xs font-semibold text-green-800">✓ Logo ready</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <hr className="my-6" />
+
+
+
+
                         <p className="text-gray-600 text-sm mb-6">Select which fields should appear in the invitation form</p>
 
                         {!generatedInviteLink ? (
@@ -669,59 +727,7 @@ export default function ClientsPage() {
 
                                 <hr className="my-6" />
 
-                                {/* Logo Upload Section */}
-                                <div className="space-y-3">
-                                    <p className="text-sm font-semibold text-gray-700">Organization Logo</p>
-                                    <p className="text-xs text-gray-600">Upload a logo to display on the invitation form</p>
-                                    
-                                    {/* Logo Preview */}
-                                    {inviteLogoPreview && (
-                                        <div className="relative p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                            <img 
-                                                src={inviteLogoPreview} 
-                                                alt="Logo Preview" 
-                                                className="h-20 mx-auto object-contain"
-                                            />
-                                            <button
-                                                onClick={() => {
-                                                    setInviteLogoFile(null);
-                                                    setInviteLogoPreview('');
-                                                    setInviteLogoUrl('');
-                                                }}
-                                                className="absolute top-2 right-2 p-1 bg-red-100 hover:bg-red-200 rounded-full transition-colors"
-                                            >
-                                                <X className="w-4 h-4 text-red-600" />
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {/* Upload Button */}
-                                    <button
-                                        onClick={handleLogoUploadClick}
-                                        className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-colors text-gray-600 font-medium"
-                                    >
-                                        + Select Logo
-                                    </button>
-
-                                    {/* Upload to Cloudinary Button */}
-                                    {inviteLogoPreview && !inviteLogoUrl && (
-                                        <button
-                                            onClick={handleUploadLogoToCloudinary}
-                                            disabled={uploadingLogo}
-                                            className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-colors"
-                                        >
-                                            {uploadingLogo ? 'Uploading Logo...' : 'Upload Logo to Cloud'}
-                                        </button>
-                                    )}
-
-                                    {inviteLogoUrl && (
-                                        <div className="p-3 bg-green-50 border border-green-200 rounded-xl">
-                                            <p className="text-xs font-semibold text-green-800">✓ Logo ready</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <hr className="my-6" />
+                               
 
                                 {/* Generate Button */}
                                 <button
