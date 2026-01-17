@@ -26,6 +26,7 @@ function Toast({ message, type, onClose }: { message: string, type: 'success' | 
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<any[]>([]);
+    const [teamMembers, setTeamMembers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', notes: '' });
@@ -81,6 +82,24 @@ export default function ClientsPage() {
         }
     };
 
+    const fetchTeamMembers = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/organization/team', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.team) {
+                    setTeamMembers(data.team || []);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching team members:', error);
+        }
+    };
+
     const fetchOrganizationName = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -105,8 +124,12 @@ export default function ClientsPage() {
 
     useEffect(() => {
         fetchClients();
+        fetchTeamMembers();
         fetchOrganizationName();
-        const interval = setInterval(fetchClients, 10000); // Poll every 10s
+        const interval = setInterval(() => {
+            fetchClients();
+            fetchTeamMembers();
+        }, 10000);
         return () => clearInterval(interval);
     }, []);
 
@@ -448,6 +471,44 @@ export default function ClientsPage() {
                     </table >
                 </div >
             </div >
+
+            {/* Team Members Section */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="mb-6 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-xl font-bold text-gray-900">Team Members</h2>
+                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">{teamMembers.length}</span>
+                </div>
+                {teamMembers.length === 0 ? (
+                    <div className="py-12 text-center">
+                        <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500">No team members</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-gray-50 border-b border-gray-100">
+                                <tr>
+                                    <th className="px-6 py-4 font-medium text-left text-gray-700">Name</th>
+                                    <th className="px-6 py-4 font-medium text-left text-gray-700">Email</th>
+                                    <th className="px-6 py-4 font-medium text-left text-gray-700">Phone</th>
+                                    <th className="px-6 py-4 font-medium text-left text-gray-700">Role</th>
+                                    <th className="px-6 py-4 font-medium text-left text-gray-700">Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {teamMembers.map((member) => (
+                                    <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4"><div className="font-medium text-gray-900">{member.name}</div></td>
+                                        <td className="px-6 py-4"><div className="flex items-center gap-2 text-gray-600"><Mail className="w-4 h-4" />{member.email}</div></td>
+                                        <td className="px-6 py-4">{member.phoneNumber ? (<div className="flex items-center gap-2 text-gray-600"><Phone className="w-4 h-4" />{member.phoneNumber}</div>) : (<span className="text-gray-400">—</span>)}</td>
+                                        <td className="px-6 py-4"><span className={`px-3 py-1 rounded-full text-xs font-medium ${member.role === 'ADMIN' ? 'bg-red-100 text-red-700' : member.role === 'MEMBER' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>{member.role}</span></td>
+                                        <td className="px-6 py-4 text-gray-600 text-sm">{new Date(member.createdAt).toLocaleDateString()}</td>
+                                    </tr>
+                                ))}\n                            </tbody>
+                        </table>
+                    </div>
+                )}\n            </div>
 
             {/* Add Modal */}
             {
