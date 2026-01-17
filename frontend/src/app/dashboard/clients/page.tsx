@@ -242,7 +242,7 @@ export default function ClientsPage() {
             if (res.ok) {
                 const data = await res.json();
                 // Build the invite link with correct frontend URL
-                const frontendUrl = typeof window !== 'undefined' ? window.location.origin : 'https://scriptshrxcodebase.onrender.com';
+                const frontendUrl = 'https://scriptshrx.net';
                 const inviteToken = data.invite.token;
                 const fieldsParam = btoa(JSON.stringify(inviteFieldsConfig));
                 const customLink = `${frontendUrl}/register?invite=${inviteToken}&fields=${fieldsParam}&role=${inviteRoleConfig}`;
