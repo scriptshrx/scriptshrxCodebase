@@ -59,7 +59,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 }
             } catch (err) {
                 console.error('User fetch failed:', err);
-                setUser(prev => prev || { name: 'Admin', email: 'admin@scriptishrx.com', avatarUrl: '' });
+                // Use localStorage as fallback when API fails
+                const storedName = localStorage.getItem('userName');
+                const storedRole = localStorage.getItem('userRole');
+                if (storedName) {
+                    setUser({ name: storedName, email: '', avatarUrl: '', role: storedRole || '' });
+                } else {
+                    setUser({ name: 'Guest User', email: '', avatarUrl: '' });
+                }
             }
         })();
     }, []);
