@@ -512,3 +512,6 @@ export default function LeadsPage() {
                 </div>
             </GlassCard>
             )}
+        </div>
+    );
+}
