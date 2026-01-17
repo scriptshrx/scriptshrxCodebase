@@ -65,10 +65,13 @@ const corsOptions = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+    optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use(express.json({
