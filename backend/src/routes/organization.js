@@ -419,7 +419,8 @@ router.get('/invite/verify/:token', inviteVerifyLimiter, async (req, res) => {
                 email: invite.email,
                 role: invite.role,
                 organization: invite.tenant.name,
-                expiresAt: invite.expiresAt
+                expiresAt: invite.expiresAt,
+                metadata: invite.metadata
             }
         });
     } catch (error) {

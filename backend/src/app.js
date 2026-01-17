@@ -70,6 +70,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use(express.json({

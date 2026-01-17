@@ -10,7 +10,8 @@ const PlanEnum = ['Basic', 'Intermediate', 'Advanced'];
 const registerSchema = z.object({
     email: z.string().email(),
     password: z.string()
-        .min(8, 'Password must be at least 8 characters'),
+        .min(8, 'Password must be at least 8 characters')
+        .optional(),
     name: z.string().min(2),
     companyName: z.string().optional(),
     accountType: z.enum(['INDIVIDUAL', 'ORGANIZATION']).optional().default('ORGANIZATION'),
@@ -21,14 +22,18 @@ const registerSchema = z.object({
     role: z.string().optional(),
     inviteToken: z.string().optional()
 }).refine(data => {
+    // Password is required for non-invite registrations
+    if (!data.inviteToken && !data.password) {
+        return false;
+    }
     // Only require companyName for ORGANIZATION accounts when NOT via invite
     if (data.accountType === 'ORGANIZATION' && !data.inviteToken && !data.companyName) {
         return false;
     }
     return true;
 }, {
-    message: "Company name is required for Organization accounts",
-    path: ["companyName"]
+    message: "Password is required for registration",
+    path: ["password"]
 });
 
 const loginSchema = z.object({

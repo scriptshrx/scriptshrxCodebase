@@ -32,6 +32,7 @@ export default function RegisterContent() {
         role: false
     });
     const [configuredRole, setConfiguredRole] = useState('MEMBER');
+    const [inviteLogo, setInviteLogo] = useState<string | null>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -61,7 +62,28 @@ export default function RegisterContent() {
         if (roleParam) {
             setConfiguredRole(roleParam);
         }
+
+        // Fetch invite metadata to get logo URL
+        if (inviteToken) {
+            fetchInviteMetadata(inviteToken);
+        }
     }, [searchParams]);
+
+    const fetchInviteMetadata = async (token: string) => {
+        try {
+            // Fetch the invite details from backend to get metadata
+            const response = await axios.get(`https://scriptshrxcodebase.onrender.com/api/organization/invite/verify/${token}`);
+            if (response.data && response.data.invite && response.data.invite.metadata) {
+                const logoUrl = response.data.invite.metadata.logoUrl;
+                if (logoUrl) {
+                    setInviteLogo(logoUrl);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch invite metadata:', error);
+            // Logo is optional, don't fail registration
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -108,7 +130,7 @@ export default function RegisterContent() {
             <div className="bg-white/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/50">
                 <div className="text-center mb-6">
                     <div className="flex justify-center mb-4">
-                        <img src="/logo.jpg" alt="ScriptishRx" className="h-20 w-auto" />
+                        <img src={inviteLogo || "/logo.jpg"} alt="ScriptishRx" className="h-20 w-auto" />
                     </div>
                     <p className="text-blue-600 font-medium">Create your account to get started.</p>
                 </div>
@@ -224,17 +246,19 @@ export default function RegisterContent() {
                         </div>
                     )}
 
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all duration-200 text-gray-800 placeholder-gray-400"
-                            placeholder="•••••••• (Min 8 characters)"
-                            required
-                        />
-                    </div>
+                    {!isInviteRegistration && (
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all duration-200 text-gray-800 placeholder-gray-400"
+                                placeholder="•••••••• (Min 8 characters)"
+                                required
+                            />
+                        </div>
+                    )}
                     <button
                         type="submit"
                         disabled={isLoading}

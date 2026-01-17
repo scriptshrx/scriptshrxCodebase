@@ -45,6 +45,10 @@ export default function ClientsPage() {
     const [generatedInviteLink, setGeneratedInviteLink] = useState('');
     const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
     const [generatingInvite, setGeneratingInvite] = useState(false);
+    const [inviteLogoFile, setInviteLogoFile] = useState<File | null>(null);
+    const [inviteLogoPreview, setInviteLogoPreview] = useState<string>('');
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+    const [inviteLogoUrl, setInviteLogoUrl] = useState<string>('');
 
     // Toast State
     const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -218,6 +222,56 @@ export default function ClientsPage() {
         }
     };
 
+    const handleLogoUploadClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
+                setInviteLogoFile(file);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    setInviteLogoPreview(e.target?.result as string);
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    };
+
+    const handleUploadLogoToCloudinary = async () => {
+        if (!inviteLogoFile) {
+            showToast('Please select a logo first', 'error');
+            return;
+        }
+
+        setUploadingLogo(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', inviteLogoFile);
+            formData.append('upload_preset', 'scriptishrx_upload');
+
+            const response = await fetch('https://api.cloudinary.com/v1_1/dadvxxgl1/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to upload to Cloudinary');
+            }
+
+            const data = await response.json();
+            setInviteLogoUrl(data.secure_url);
+            showToast('Logo uploaded successfully!', 'success');
+        } catch (error) {
+            console.error('Logo upload error:', error);
+            showToast('Failed to upload logo', 'error');
+        } finally {
+            setUploadingLogo(false);
+        }
+    };
+
     const handleGenerateCustomInvite = async () => {
         setGeneratingInvite(true);
 
@@ -234,7 +288,8 @@ export default function ClientsPage() {
                     role: inviteRoleConfig,
                     metadata: {
                         fieldsConfig: inviteFieldsConfig,
-                        configuredRole: inviteRoleConfig
+                        configuredRole: inviteRoleConfig,
+                        logoUrl: inviteLogoUrl
                     }
                 })
             });
@@ -280,6 +335,9 @@ export default function ClientsPage() {
         setInviteFieldsConfig({ name: true, email: true, phone: false, country: false, role: false });
         setInviteRoleConfig('MEMBER');
         setGeneratedInviteLink('');
+        setInviteLogoFile(null);
+        setInviteLogoPreview('');
+        setInviteLogoUrl('');
         setShowConfigureInvite(true);
     };
 
@@ -609,6 +667,62 @@ export default function ClientsPage() {
                                         </div>
                                     </label>
                                 </div>
+
+                                <hr className="my-6" />
+
+                                {/* Logo Upload Section */}
+                                <div className="space-y-3">
+                                    <p className="text-sm font-semibold text-gray-700">Organization Logo</p>
+                                    <p className="text-xs text-gray-600">Upload a logo to display on the invitation form</p>
+                                    
+                                    {/* Logo Preview */}
+                                    {inviteLogoPreview && (
+                                        <div className="relative p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                            <img 
+                                                src={inviteLogoPreview} 
+                                                alt="Logo Preview" 
+                                                className="h-20 mx-auto object-contain"
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    setInviteLogoFile(null);
+                                                    setInviteLogoPreview('');
+                                                    setInviteLogoUrl('');
+                                                }}
+                                                className="absolute top-2 right-2 p-1 bg-red-100 hover:bg-red-200 rounded-full transition-colors"
+                                            >
+                                                <X className="w-4 h-4 text-red-600" />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Upload Button */}
+                                    <button
+                                        onClick={handleLogoUploadClick}
+                                        className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-colors text-gray-600 font-medium"
+                                    >
+                                        + Select Logo
+                                    </button>
+
+                                    {/* Upload to Cloudinary Button */}
+                                    {inviteLogoPreview && !inviteLogoUrl && (
+                                        <button
+                                            onClick={handleUploadLogoToCloudinary}
+                                            disabled={uploadingLogo}
+                                            className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-colors"
+                                        >
+                                            {uploadingLogo ? 'Uploading Logo...' : 'Upload Logo to Cloud'}
+                                        </button>
+                                    )}
+
+                                    {inviteLogoUrl && (
+                                        <div className="p-3 bg-green-50 border border-green-200 rounded-xl">
+                                            <p className="text-xs font-semibold text-green-800">✓ Logo ready</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <hr className="my-6" />
 
                                 {/* Generate Button */}
                                 <button
