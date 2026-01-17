@@ -105,7 +105,8 @@ router.post('/register', registerLimiter, async (req, res) => {
                 return res.status(400).json({ error: 'Invite has expired' });
             }
 
-            if (invite.email !== email) {
+            // Only validate email match if invite has a real email (not a temp invite)
+            if (!invite.email.includes('@temp.local') && invite.email !== email) {
                 return res.status(400).json({ error: 'Email does not match invite' });
             }
 
