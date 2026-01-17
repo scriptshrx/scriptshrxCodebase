@@ -106,7 +106,7 @@ export default function InsightsPage() {
                     bg="bg-green-50"
                 />
                 <MetricCard
-                    title="Total Users"
+                    title="Total Leads"
                     value={`${totalUsers}`}
                     trend={`${userGrowth > 0 ? '+' : ''}${userGrowth}%`}
                     icon={<Users className="w-5 h-5 text-blue-600" />}
@@ -132,7 +132,7 @@ export default function InsightsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-bold text-gray-900">Client Behavior Analysis</h2>
+                        <h2 className="text-lg font-bold text-gray-900">Leads Performace Analysis</h2>
                         <div className="p-2 bg-gray-50 rounded-lg">
                             <Users className="w-4 h-4 text-gray-500" />
                         </div>
@@ -199,8 +199,8 @@ export default function InsightsPage() {
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900">User Registration Growth</h2>
-                        <p className="text-sm text-gray-500 mt-1">Total registered users over time</p>
+                        <h2 className="text-lg font-bold text-gray-900">Lead Generation Trend</h2>
+                        <p className="text-sm text-gray-500 mt-1">Total leads over time</p>
                     </div>
                     <div className="p-2 bg-blue-50 rounded-lg">
                         <TrendingUp className="w-4 h-4 text-blue-600" />
@@ -225,11 +225,11 @@ export default function InsightsPage() {
                                     axisLine={false} 
                                     tickLine={false} 
                                     tick={{ fill: '#6B7280', fontSize: 12 }}
-                                    label={{ value: 'Total Users', angle: -90, position: 'insideLeft' }}
+                                    label={{ value: 'Total Leads', angle: -90, position: 'insideLeft' }}
                                 />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(value) => [`${value} users`, 'Total Users']}
+                                    formatter={(value) => [`${value} leads`, 'Total Leads']}
                                     labelFormatter={(label) => `Date: ${label}`}
                                 />
                                 <Line 
