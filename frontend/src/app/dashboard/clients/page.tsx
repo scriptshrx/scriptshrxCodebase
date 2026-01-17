@@ -241,11 +241,20 @@ export default function ClientsPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                // Build the invite link with correct frontend URL
-                const frontendUrl = 'https://scriptishrx.net';
-                const inviteToken = data.invite.token;
+                // The backend returns the full inviteLink, but we need to add our custom fields
+                const baseLink = data.invite?.inviteLink;
+                if (!baseLink) {
+                    showToast('No invite link returned from server.', 'error');
+                    setGeneratingInvite(false);
+                    return;
+                }
+                // Extract the invite token from the backend link
+                const urlParams = new URLSearchParams(new URL(baseLink).search);
+                const inviteToken = urlParams.get('invite');
+                
+                // Rebuild link with custom fields configuration
                 const fieldsParam = btoa(JSON.stringify(inviteFieldsConfig));
-                const customLink = `${frontendUrl}/register?invite=${inviteToken}&fields=${fieldsParam}&role=${inviteRoleConfig}`;
+                const customLink = `https://scriptishrx.net/register?invite=${inviteToken}&fields=${fieldsParam}&role=${inviteRoleConfig}`;
                 setGeneratedInviteLink(customLink);
                 showToast('Invite configuration generated!', 'success');
             } else {
