@@ -71,7 +71,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     console.log('DIRECT_URL used is:', process.env.DIRECT_URL);
     console.log('Registering as', req.body);
     try {
-        let validated, email, password, name, companyName, location, timezone, inviteToken, hashedPassword;
+        let validated, email, password, name, companyName, phone, country, timezone, inviteToken, hashedPassword;
         
         try{
             validated = registerSchema.parse(req.body);
@@ -119,6 +119,8 @@ router.post('/register', registerLimiter, async (req, res) => {
                         email,
                         password: hashedPassword,
                         name,
+                        phone,
+                        country,
                         role: invite.role, // Use role from invite
                         tenantId: invite.tenantId
                     }
