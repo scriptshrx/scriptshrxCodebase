@@ -409,7 +409,7 @@ export default function ClientsPage() {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center text-gray-500 gap-2">
                                             <Phone className="w-3 h-3" />
-                                            {client.phone}
+                                            {client.phone || 'N/A'}
                                             <button
                                                 onClick={() => handleCall(client)}
                                                 className="p-1 hover:bg-green-50 text-green-600 rounded-full transition-colors"
