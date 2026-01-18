@@ -316,10 +316,10 @@ export default function LeadsPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {member.phoneNumber ? (
+                                            {member.phoneNumber || member.phone ? (
                                                 <div className="flex items-center gap-2 text-zinc-600">
                                                     <Phone className="w-4 h-4" />
-                                                    {member.phoneNumber}
+                                                    {member.phoneNumber || member.phone}
                                                 </div>
                                             ) : (
                                                 <span className="text-zinc-400">—</span>
