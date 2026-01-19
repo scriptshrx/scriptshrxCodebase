@@ -75,7 +75,7 @@ router.post('/register', registerLimiter, async (req, res) => {
         
         try{
             validated = registerSchema.parse(req.body);
-            ({ email, password, name, companyName, location, timezone, inviteToken = undefined } = validated);
+            ({ email, password, name, companyName, location, timezone, phone, country, inviteToken = undefined } = validated);
 
             // If no password, provided for invite registration, generate a temporary one
             if (inviteToken && !password) {

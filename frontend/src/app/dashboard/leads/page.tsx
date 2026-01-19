@@ -30,6 +30,8 @@ export default function LeadsPage() {
                 });
                 if (res.ok) {
                     const data = await res.json();
+                    console.log('Team members response:', data);
+                    console.log('Team members data:', data.team);
                     if (data.success && data.team) {
                         setTeamMembers(data.team || []);
                         if(data.team.length){
