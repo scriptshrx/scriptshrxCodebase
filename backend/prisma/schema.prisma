@@ -88,6 +88,7 @@ model User {
   subscription Subscription?
   avatarUrl    String?
   phoneNumber  String?
+  country      String?
   notifications Notification[]
   transactions Transaction[]
   createdInvites Invite[] @relation(name: "createdInvites")

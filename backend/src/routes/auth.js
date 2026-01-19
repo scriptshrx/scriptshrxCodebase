@@ -119,7 +119,7 @@ router.post('/register', registerLimiter, async (req, res) => {
                         email,
                         password: hashedPassword,
                         name,
-                        phone,
+                        phoneNumber: phone,
                         country,
                         role: invite.role, // Use role from invite
                         tenantId: invite.tenantId

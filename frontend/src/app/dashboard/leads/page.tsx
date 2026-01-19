@@ -291,6 +291,7 @@ export default function LeadsPage() {
                                 <th className="px-6 py-4 font-semibold text-zinc-900">Name</th>
                                 <th className="px-6 py-4 font-semibold text-zinc-900">Email</th>
                                 <th className="px-6 py-4 font-semibold text-zinc-900">Phone</th>
+                                <th className="px-6 py-4 font-semibold text-zinc-900">Country</th>
                                 <th className="px-6 py-4 font-semibold text-zinc-900">Role</th>
                                 <th className="px-6 py-4 font-semibold text-zinc-900">Joined</th>
                             </tr>
@@ -298,7 +299,7 @@ export default function LeadsPage() {
                         <tbody className="divide-y divide-zinc-200">
                             {teamMembers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center">
+                                    <td colSpan={6} className="px-6 py-12 text-center">
                                         <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
                                         <p className="text-zinc-500 font-medium">No team members</p>
                                     </td>
@@ -321,6 +322,13 @@ export default function LeadsPage() {
                                                     <Phone className="w-4 h-4" />
                                                     {member.phoneNumber || member.phone}
                                                 </div>
+                                            ) : (
+                                                <span className="text-zinc-400">—</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {member.country ? (
+                                                <div className="text-zinc-600">{member.country}</div>
                                             ) : (
                                                 <span className="text-zinc-400">—</span>
                                             )}
