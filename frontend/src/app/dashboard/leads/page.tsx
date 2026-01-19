@@ -33,7 +33,7 @@ export default function LeadsPage() {
                     if (data.success && data.team) {
                         setTeamMembers(data.team || []);
                         if(data.team.length){
-                            setLoadingLeads(false);
+                            setLoadingLeads(false);return;
                         }
                     }
                 }
