@@ -454,7 +454,8 @@ router.get('/team',
                     role: true,
                     createdAt: true,
                     avatarUrl: true,
-                    phoneNumber: true
+                    phoneNumber: true,
+                    country: true
                 },
                 orderBy: {
                     createdAt: 'asc'
