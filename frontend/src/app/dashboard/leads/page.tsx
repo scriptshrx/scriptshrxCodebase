@@ -305,7 +305,7 @@ export default function LeadsPage() {
                                 <tr>
                                     <td colSpan={6} className="px-6 py-12 text-center">
                                         <Users className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                                        <p className="text-zinc-500 font-medium">{LoadingLeads?'Loading Leads...':'No leads captured'}</p>
+                                        <p className="text-zinc-500 font-medium">{loadingLeads?'Loading Leads...':'No leads captured'}</p>
                                     </td>
                                 </tr>
                             ) : (
