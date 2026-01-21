@@ -99,6 +99,7 @@ class VoiceService {
                         timezone: true
                     }
                 });
+                console.log('customSystemPrompt from db:', t?.customSystemPrompt);
 
                 if (!t) t = await prisma.tenant.findFirst({
                     select: {
