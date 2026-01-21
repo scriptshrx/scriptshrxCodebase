@@ -674,6 +674,11 @@ router.patch('/info',
                 twilioConfig // JSON: { accountSid, authToken, phoneNumber ... }
             } = req.body;
 
+            console.log('[Organization API] PATCH /info received');
+            console.log('[Organization API] Tenant ID:', tenantId);
+            console.log('[Organization API] customSystemPrompt from request:', customSystemPrompt ? `${customSystemPrompt.substring(0, 50)}...` : 'UNDEFINED');
+            console.log('[Organization API] aiConfig:', aiConfig);
+
             const updateData = {};
             if (name !== undefined) updateData.name = name;
             if (location !== undefined) updateData.location = location;
@@ -683,7 +688,10 @@ router.patch('/info',
             if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
             if (aiName !== undefined) updateData.aiName = aiName;
             if (aiWelcomeMessage !== undefined) updateData.aiWelcomeMessage = aiWelcomeMessage;
-            if (customSystemPrompt !== undefined) updateData.customSystemPrompt = customSystemPrompt;
+            if (customSystemPrompt !== undefined) {
+                console.log('[Organization API] Setting customSystemPrompt to:', customSystemPrompt.substring(0, 50) + '...');
+                updateData.customSystemPrompt = customSystemPrompt;
+            }
 
             // New JSON Configs
             if (aiConfig !== undefined) {
@@ -782,6 +790,10 @@ router.patch('/info',
                 where: { id: tenantId },
                 data: updateData
             });
+
+            console.log('[Organization API] Tenant updated successfully');
+            console.log('[Organization API] Updated customSystemPrompt:', tenant.customSystemPrompt ? `${tenant.customSystemPrompt.substring(0, 50)}...` : 'NULL');
+            console.log('[Organization API] Updated aiConfig:', tenant.aiConfig);
 
             res.json({
                 success: true,

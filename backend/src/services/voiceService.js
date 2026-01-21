@@ -71,8 +71,8 @@ class VoiceService {
                 .map(s => `• ${s.name}: ${s.currency} ${s.price}`)
                 .join('\n');
         } catch (err) {
-            console.error('Pricing load skipped:', err.message);
-            return 'Pricing details can be provided on request.';
+            console.warn('[VoiceService] Pricing context error (this is OK if services table not yet created):', err.message);
+            return 'Pricing is available upon request.';
         }
     }
 
@@ -107,6 +107,7 @@ class VoiceService {
                     if (t) {
                         console.log(`[VoiceService] ✓ Tenant found by phone number: ${t.name} (ID: ${t.id})`);
                         console.log('[VoiceService] customSystemPrompt from db:', t?.customSystemPrompt);
+                        console.log('[VoiceService] Full tenant object:', JSON.stringify(t, null, 2));
                     } else {
                         console.log(`[VoiceService] ⚠ No tenant found for phone number: ${calledNumber}`);
                     }
@@ -296,6 +297,7 @@ class VoiceService {
                     }
                 });
                 if (freshTenant) {
+                    console.log('[VoiceService] Fresh tenant fetched:', JSON.stringify(freshTenant, null, 2));
                     tenant = freshTenant;
                     console.log('[VoiceService] ✓ Tenant data refreshed from database');
                 }
