@@ -679,6 +679,13 @@ router.patch('/info',
             console.log('[Organization API] customSystemPrompt from request:', customSystemPrompt ? `${customSystemPrompt.substring(0, 50)}...` : 'UNDEFINED');
             console.log('[Organization API] aiConfig:', aiConfig);
 
+            if (!tenantId) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'No tenant ID found'
+                });
+            }
+
             const updateData = {};
             if (name !== undefined) updateData.name = name;
             if (location !== undefined) updateData.location = location;
@@ -691,6 +698,9 @@ router.patch('/info',
             if (customSystemPrompt !== undefined) {
                 console.log('[Organization API] Setting customSystemPrompt to:', customSystemPrompt.substring(0, 50) + '...');
                 updateData.customSystemPrompt = customSystemPrompt;
+                console.log('[Organization API] updateData.customSystemPrompt is now set:', updateData.customSystemPrompt ? 'YES' : 'NO');
+            } else {
+                console.log('[Organization API] customSystemPrompt was UNDEFINED in request body');
             }
 
             // New JSON Configs
@@ -785,6 +795,8 @@ router.patch('/info',
                     ...twilioConfig
                 };
             }
+
+            console.log('[Organization API] Final updateData to be saved:', JSON.stringify(updateData, null, 2));
 
             const tenant = await prisma.tenant.update({
                 where: { id: tenantId },

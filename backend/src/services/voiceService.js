@@ -292,8 +292,7 @@ class VoiceService {
                         aiWelcomeMessage: true,
                         customSystemPrompt: true,
                         aiConfig: true,
-                        timezone: true,
-                        companyName: true
+                        timezone: true
                     }
                 });
                 if (freshTenant) {
@@ -309,7 +308,7 @@ class VoiceService {
 
         // 2. Get the dynamic company name from the session tenant
         const aiName = tenant?.aiName || tenant?.name || 'our office';
-        const companyName = tenant?.name || tenant?.companyName || 'our office';
+        const companyName = tenant?.name || 'our office';
 
         let pricing = 'Pricing is available upon request.';
         if (tenant) {
