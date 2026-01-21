@@ -86,36 +86,57 @@ class VoiceService {
             try {
                 const url = new URL(req.url, `http://${req.headers.host}`);
                 const calledNumber = url.searchParams.get('To');
+                console.log('[VoiceService] Inbound call To number:', calledNumber);
 
-                let t = await prisma.tenant.findFirst({
-                    where: calledNumber ? { phoneNumber: calledNumber } : {},
-                    select: {
-                        id: true,
-                        name: true,
-                        aiName: true,
-                        aiWelcomeMessage: true,
-                        customSystemPrompt: true,
-                        aiConfig: true,
-                        timezone: true
+                let t = null;
+                
+                // Try to find tenant by exact phone number match
+                if (calledNumber) {
+                    t = await prisma.tenant.findFirst({
+                        where: { phoneNumber: calledNumber },
+                        select: {
+                            id: true,
+                            name: true,
+                            aiName: true,
+                            aiWelcomeMessage: true,
+                            customSystemPrompt: true,
+                            aiConfig: true,
+                            timezone: true
+                        }
+                    });
+                    if (t) {
+                        console.log(`[VoiceService] ✓ Tenant found by phone number: ${t.name} (ID: ${t.id})`);
+                        console.log('[VoiceService] customSystemPrompt from db:', t?.customSystemPrompt);
+                    } else {
+                        console.log(`[VoiceService] ⚠ No tenant found for phone number: ${calledNumber}`);
                     }
-                });
-                console.log('customSystemPrompt from db:', t?.customSystemPrompt);
+                }
 
-                if (!t) t = await prisma.tenant.findFirst({
-                    select: {
-                        id: true,
-                        name: true,
-                        aiName: true,
-                        aiWelcomeMessage: true,
-                        customSystemPrompt: true,
-                        aiConfig: true,
-                        timezone: true
+                // Fallback: get any tenant if not found by phone
+                if (!t) {
+                    t = await prisma.tenant.findFirst({
+                        select: {
+                            id: true,
+                            name: true,
+                            aiName: true,
+                            aiWelcomeMessage: true,
+                            customSystemPrompt: true,
+                            aiConfig: true,
+                            timezone: true
+                        }
+                    });
+                    if (t) {
+                        console.log(`[VoiceService] ⚠ Using fallback tenant: ${t.name} (ID: ${t.id})`);
+                        console.log('[VoiceService] customSystemPrompt from fallback:', t?.customSystemPrompt);
+                    } else {
+                        console.log('[VoiceService] ✗ No tenants found in database, using hardcoded fallback');
+                        t = { id: 'fallback', name: 'Our Business', aiName: 'AI Assistant' };
                     }
-                }) || { id: 'fallback', name: 'Our Business', aiName: 'AI Assistant' };
-                console.log(`[VoiceService] Tenant identified: ${t.name} (AI: ${t.aiName})`);
+                }
+                
                 return t;
             } catch (err) {
-                console.error('Tenant lookup error:', err);
+                console.error('[VoiceService] Tenant lookup error:', err);
                 return { id: 'fallback', name: 'Fallback Business', aiName: 'AI Assistant' };
             }
         })();
@@ -257,9 +278,34 @@ class VoiceService {
             return;
         }
 
-        // 1. Get the dynamic company name from the session tenant
-        const tenant = session.tenant;
-        // Use aiName if available, otherwise fall back to company name
+        // 1. Refresh tenant data from database to ensure we have the latest customSystemPrompt
+        let tenant = session.tenant;
+        if (tenant && tenant.id !== 'fallback') {
+            try {
+                const freshTenant = await prisma.tenant.findUnique({
+                    where: { id: tenant.id },
+                    select: {
+                        id: true,
+                        name: true,
+                        aiName: true,
+                        aiWelcomeMessage: true,
+                        customSystemPrompt: true,
+                        aiConfig: true,
+                        timezone: true,
+                        companyName: true
+                    }
+                });
+                if (freshTenant) {
+                    tenant = freshTenant;
+                    console.log('[VoiceService] ✓ Tenant data refreshed from database');
+                }
+            } catch (err) {
+                console.error('[VoiceService] Error refreshing tenant data:', err.message);
+                // Continue with stale tenant data if refresh fails
+            }
+        }
+
+        // 2. Get the dynamic company name from the session tenant
         const aiName = tenant?.aiName || tenant?.name || 'our office';
         const companyName = tenant?.name || tenant?.companyName || 'our office';
 
@@ -268,18 +314,23 @@ class VoiceService {
             pricing = await this.getPricingContext(tenant.id);
         }
 
-        // 2. Build the System Prompt - Use custom system prompt from tenant config if available
+        // 3. Build the System Prompt - Use custom system prompt from tenant config if available
         let systemPrompt;
+        
+        console.log('[VoiceService] Tenant customSystemPrompt value:', tenant?.customSystemPrompt);
+        console.log('[VoiceService] Tenant aiConfig:', tenant?.aiConfig);
         
         if (tenant?.customSystemPrompt && tenant.customSystemPrompt.trim()) {
             // Use the custom system prompt configured by the organization in dashboard
             systemPrompt = tenant.customSystemPrompt;
-            console.log('[VoiceService] Using custom system prompt from tenant');
+            console.log('[VoiceService] ✓ Using CUSTOM system prompt from tenant');
         } else if (tenant?.aiConfig?.systemPrompt && tenant.aiConfig.systemPrompt.trim()) {
             // Alternative: Use systemPrompt from aiConfig JSON if customSystemPrompt not set
             systemPrompt = tenant.aiConfig.systemPrompt;
+            console.log('[VoiceService] ✓ Using system prompt from aiConfig');
         } else {
             // Fallback to default system prompt
+            console.log('[VoiceService] ⚠ Using DEFAULT system prompt (custom prompt is null or empty)');
             systemPrompt = `
     You are an AI call agent representing Scriptishrx, a software solutions company.
 Your role is to professionally greet callers, clearly present available services, explain pricing, and guide the caller toward booking a service.
