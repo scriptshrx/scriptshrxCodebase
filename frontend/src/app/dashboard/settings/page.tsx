@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Save, Palette, Bot, Shield, Loader2, Camera, User, Building, Lock, Mail, Phone, Activity, X, Check, AlertCircle, Plus, Key, Calendar, CreditCard, Bell, Zap, Trash2, FileText, ExternalLink } from 'lucide-react';
+import { Save, Palette, Bot, Shield, Loader2, Camera, User, Building, Lock, Mail, Phone, Activity, X, Check, AlertCircle, Plus, Key, Calendar, CreditCard, Bell, Zap, Trash2, FileText, ExternalLink, Clock, RotateCw } from 'lucide-react';
 
 // --- Toast Notification ---
 function Toast({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) {
@@ -127,6 +127,121 @@ function IntegrationItem({ name, description, connectedKey, integrations, onConn
                     <>Connect</>
                 )}
             </button>
+        </div>
+    );
+}
+
+// --- Calendar Settings Component ---
+function CalendarSettings({ integrations, onConnectClick, onDisconnectClick, loading }: any) {
+    const [status, setStatus] = React.useState<any>(null);
+    const [statusLoading, setStatusLoading] = React.useState(false);
+
+    React.useEffect(() => {
+        fetchCalendarStatus();
+    }, [integrations?.googleCalendar?.connected]);
+
+    const fetchCalendarStatus = async () => {
+        try {
+            setStatusLoading(true);
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/tenant-calendar/status', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setStatus(data);
+        } catch (e) {
+            console.error('Failed to fetch calendar status:', e);
+        } finally {
+            setStatusLoading(false);
+        }
+    };
+
+    const config = (integrations && integrations.googleCalendar) || {};
+    const isConnected = !!config && (config === true || config.connected === true);
+    const isLoading = loading === 'googleCalendar';
+
+    return (
+        <div className="p-6 bg-white border border-gray-200 rounded-xl">
+            <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start gap-4">
+                    <div className={`p-3 rounded-xl mt-1 ${isConnected ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                        <Calendar className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-lg text-gray-900">Google Calendar</h3>
+                        <p className="text-sm text-gray-500 mt-1">Two-way sync for bookings. AI will check your calendar availability before booking.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                {statusLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                        <Loader2 className="w-4 h-4 animate-spin text-gray-400 mr-2" />
+                        <p className="text-sm text-gray-500">Loading status...</p>
+                    </div>
+                ) : isConnected && status?.connected ? (
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Check className="w-5 h-5 text-green-600" />
+                            <span className="text-sm font-medium text-gray-900">Connected</span>
+                        </div>
+                        {status?.calendarEmail && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <Mail className="w-4 h-4 text-gray-400" />
+                                {status.calendarEmail}
+                            </div>
+                        )}
+                        {status?.timezone && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <Clock className="w-4 h-4 text-gray-400" />
+                                Timezone: {status.timezone}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5 text-amber-500" />
+                        <p className="text-sm text-gray-600">Not connected. Connect to enable calendar syncing.</p>
+                    </div>
+                )}
+            </div>
+
+            <div className="mt-6 flex gap-3">
+                <button
+                    onClick={() => isConnected ? onDisconnectClick('googleCalendar') : onConnectClick('googleCalendar')}
+                    disabled={isLoading}
+                    className={`flex items-center justify-center px-6 py-2 rounded-lg text-sm font-bold transition-all duration-200
+                        ${isConnected
+                            ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                            : 'bg-black text-white hover:bg-gray-800 shadow-md hover:shadow-lg'
+                        } ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
+                >
+                    {isLoading ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            {isConnected ? 'Disconnecting...' : 'Connecting...'}
+                        </>
+                    ) : isConnected ? (
+                        <>Disconnect Calendar</>
+                    ) : (
+                        <>Connect Google Calendar</>
+                    )}
+                </button>
+                {isConnected && (
+                    <button
+                        onClick={fetchCalendarStatus}
+                        disabled={statusLoading}
+                        className="flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                    >
+                        {statusLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <RotateCw className="w-4 h-4" />
+                        )}
+                    </button>
+                )}
+            </div>
         </div>
     );
 }
@@ -705,18 +820,23 @@ export default function SettingsPage() {
         // if (settings.plan !== 'Advanced' && settings.plan !== 'Trial' && settings.plan !== 'Basic') return showToast("Upgrade to Advanced to use integrations.", 'error');
 
         if (key === 'googleCalendar') {
+            setIntegrationLoading(key);
             try {
-                const res = await fetch('/api/auth/google', {
+                // Use new tenant-specific calendar endpoint
+                const res = await fetch('/api/tenant-calendar/auth-url', {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const data = await res.json();
-                if (data.url) {
-                    window.location.href = data.url;
+                if (data.success && data.authUrl) {
+                    window.location.href = data.authUrl;
                     return;
+                } else {
+                    throw new Error('No auth URL returned');
                 }
             } catch (e) {
                 console.error(e);
-                showToast('Failed to initiate Google connection', 'error');
+                showToast('Failed to initiate Google Calendar connection', 'error');
+                setIntegrationLoading(null);
                 return;
             }
         }
@@ -768,21 +888,35 @@ export default function SettingsPage() {
         const token = localStorage.getItem('token');
         setIntegrationLoading(key);
 
-        const newState = { ...integrations, [key]: { connected: false } };
-
         try {
-            const res = await fetch('/api/settings/integrations', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ integrations: JSON.stringify(newState) })
-            });
+            if (key === 'googleCalendar') {
+                const res = await fetch('/api/tenant-calendar/disconnect', {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setIntegrations({ ...integrations, [key]: { connected: false } });
+                    showToast('Google Calendar disconnected successfully.', 'success');
+                } else {
+                    throw new Error(data.message || 'Failed to disconnect');
+                }
+            } else {
+                const newState = { ...integrations, [key]: { connected: false } };
+                const res = await fetch('/api/settings/integrations', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ integrations: JSON.stringify(newState) })
+                });
 
-            if (res.ok) {
-                setIntegrations(newState);
-                showToast(`Disconnected successfully.`, 'success');
+                if (res.ok) {
+                    setIntegrations(newState);
+                    showToast(`Disconnected successfully.`, 'success');
+                }
             }
         } catch (e) {
-            showToast('Network error.', 'error');
+            console.error(e);
+            showToast('Failed to disconnect.', 'error');
         } finally {
             setIntegrationLoading(null);
         }
@@ -1066,17 +1200,16 @@ export default function SettingsPage() {
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <IntegrationItem
-                                    name="Google Calendar"
-                                    description="Two-way sync for bookings."
-                                    connectedKey="googleCalendar"
+                            <div className="grid grid-cols-1 gap-4">
+                                <CalendarSettings
                                     integrations={integrations}
                                     onConnectClick={handleConnectClick}
                                     onDisconnectClick={handleDisconnect}
                                     loading={integrationLoading}
-                                    icon={Calendar}
                                 />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <IntegrationItem
                                     name="Stripe Payments"
                                     description="Accept payments in USD."

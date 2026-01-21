@@ -120,6 +120,7 @@ const webhooksRouter = require('./routes/webhooks');
 const marketingRouter = require('./routes/marketing');
 const organizationRouter = require('./routes/organization');
 const servicesRouter = require('./routes/services');
+const tenantCalendarRouter = require('./routes/tenantCalendar.routes');
 
 // Load AI Chat routes (production: must exist)
 let chatAIRouter = null;
@@ -162,6 +163,7 @@ if (legacyChatRouter) {
 
 // Other routes
 app.use('/api/calendar', require('./routes/calendar'));
+app.use('/api/tenant-calendar', tenantCalendarRouter);
 app.use('/api/clients', clientsRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/minutes', minutesRouter);

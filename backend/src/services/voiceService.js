@@ -347,6 +347,7 @@ RESTRICTIONS
         }*/
 
         console.log('[VoiceService] Initiating OpenAI WebSocket connection');
+        console.log('[VoiceService] System Prompt:', systemPrompt.slice(0, 500) + '...');
         const apiKey = process.env.OPENAI_API_KEY;
 
         const openAiWs = new WebSocket(

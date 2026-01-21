@@ -35,6 +35,10 @@ model Tenant {
   twilioConfig     Json?
   aiConfig         Json?
 
+  // Google Calendar - Tenant-level configuration
+  googleCalendarEmail String?
+  googleCalendarTokens TenantGoogleToken?
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -68,6 +72,20 @@ model SubscriptionPlan {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   @@map("subscription_plans")
+}
+
+model TenantGoogleToken {
+  id String @id @default(cuid())
+  tenantId String @unique
+  accessToken String @db.Text
+  refreshToken String @db.Text
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  @@index([tenantId])
+  @@map("tenant_google_tokens")
 }
 
 model User {

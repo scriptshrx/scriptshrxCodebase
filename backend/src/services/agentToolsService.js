@@ -2,14 +2,15 @@
 /**
  * Agent Tools Service - Function Calling for Voice Agent
  * Enables the AI to perform actions during voice calls:
- * - Check appointment availability
- * - Book appointments
+ * - Check appointment availability (with tenant calendar sync)
+ * - Book appointments (with Google Calendar integration)
  * - Look up client information
  * - Get business information
  */
 
 const prisma = require('../lib/prisma');
 const bookingService = require('./bookingService');
+const TenantCalendarService = require('./tenantCalendarService');
 
 /**
  * Tool definitions for OpenAI Realtime API
@@ -167,6 +168,7 @@ async function executeTool(toolName, args, context) {
 
 /**
  * Check appointment availability for a given date
+ * Checks both database bookings AND tenant's Google Calendar
  */
 async function checkAvailability(tenantId, dateStr, timePreference = 'any') {
     const targetDate = new Date(dateStr);
@@ -175,6 +177,7 @@ async function checkAvailability(tenantId, dateStr, timePreference = 'any') {
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
+    // 1. Check database bookings for this tenant only
     const existingBookings = await prisma.booking.findMany({
         where: {
             tenantId,
@@ -187,8 +190,23 @@ async function checkAvailability(tenantId, dateStr, timePreference = 'any') {
         select: { date: true }
     });
 
-    const bookedHours = existingBookings.map(b => new Date(b.date).getHours());
+    const bookedHours = new Set(existingBookings.map(b => new Date(b.date).getHours()));
 
+    // 2. Check tenant's Google Calendar if connected
+    try {
+        const hasCalendar = await TenantCalendarService.hasTenantCalendar(tenantId);
+        if (hasCalendar) {
+            const calendarBusyHours = await TenantCalendarService.getTenantCalendarBusySlots(
+                tenantId,
+                targetDate
+            );
+            calendarBusyHours.forEach(h => bookedHours.add(h));
+        }
+    } catch (err) {
+        console.warn(`[Availability] Calendar access for tenant ${tenantId} not configured:`, err.message);
+    }
+
+    // 3. Generate available slots
     const allSlots = [];
     const startHour = timePreference === 'morning' ? 9 :
         timePreference === 'afternoon' ? 12 :
@@ -198,7 +216,7 @@ async function checkAvailability(tenantId, dateStr, timePreference = 'any') {
             timePreference === 'evening' ? 18 : 17;
 
     for (let hour = startHour; hour <= endHour; hour++) {
-        if (!bookedHours.includes(hour)) {
+        if (!bookedHours.has(hour)) {
             const slotTime = new Date(targetDate);
             slotTime.setHours(hour, 0, 0, 0);
             allSlots.push({
@@ -241,6 +259,7 @@ async function checkAvailability(tenantId, dateStr, timePreference = 'any') {
 
 /**
  * Create a booking during the call
+ * Also creates Google Calendar event if tenant has calendar connected
  */
 async function createBooking(tenantId, args, callerPhone, callSessionId) {
     const { date, purpose, clientName, clientPhone, clientEmail } = args;
@@ -264,6 +283,7 @@ async function createBooking(tenantId, args, callerPhone, callSessionId) {
     }
 
     try {
+        // 1. Create booking in database
         const booking = await bookingService.createBooking(tenantId, {
             clientId: client.id,
             date: new Date(date),
@@ -271,6 +291,33 @@ async function createBooking(tenantId, args, callerPhone, callSessionId) {
             status: 'Scheduled'
         });
 
+        // 2. Create calendar event if tenant has calendar connected
+        let meetingLink = null;
+        try {
+            const hasCalendar = await TenantCalendarService.hasTenantCalendar(tenantId);
+            if (hasCalendar) {
+                const calendarEvent = await TenantCalendarService.createTenantCalendarEvent(
+                    tenantId,
+                    booking,
+                    clientName,
+                    phone
+                );
+                meetingLink = calendarEvent.meetLink;
+
+                // Update booking with meeting link
+                await prisma.booking.update({
+                    where: { id: booking.id },
+                    data: { meetingLink }
+                });
+
+                console.log(`[AgentTools] Calendar event created for booking ${booking.id}`);
+            }
+        } catch (calErr) {
+            console.warn(`[AgentTools] Calendar sync failed for tenant ${tenantId}:`, calErr.message);
+            // Continue without calendar (non-fatal)
+        }
+
+        // 3. Update call session
         if (callSessionId) {
             await prisma.callSession.update({
                 where: { id: callSessionId },
@@ -301,7 +348,8 @@ async function createBooking(tenantId, args, callerPhone, callSessionId) {
                 id: booking.id,
                 date: booking.date,
                 purpose: booking.purpose,
-                client: clientName
+                client: clientName,
+                meetingLink
             }
         };
     } catch (error) {
