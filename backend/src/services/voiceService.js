@@ -167,7 +167,18 @@ class VoiceService {
 
             if (paramTenantId && paramTenantId !== tenant.id) {
                 // Reload tenant if ID mismatch (e.g. fallback was used initially)
-                const found = await prisma.tenant.findUnique({ where: { id: paramTenantId } });
+                const found = await prisma.tenant.findUnique({
+                    where: { id: paramTenantId },
+                    select: {
+                        id: true,
+                        name: true,
+                        aiName: true,
+                        aiWelcomeMessage: true,
+                        customSystemPrompt: true,
+                        aiConfig: true,
+                        timezone: true
+                    }
+                });
                 if (found) {
                     currentTenant = found;
                     console.log(`[VoiceService] Tenant refined via params: ${currentTenant.name}`);
