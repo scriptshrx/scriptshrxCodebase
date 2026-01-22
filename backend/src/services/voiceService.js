@@ -327,19 +327,22 @@ class VoiceService {
         }
 
         // 3. Build the System Prompt - Use custom system prompt from tenant config if available
+        // Priority: aiConfig.systemPrompt (most recent source) → customSystemPrompt (legacy) → default
         let systemPrompt;
         
         console.log('[VoiceService] Tenant customSystemPrompt value:', tenant?.customSystemPrompt);
-        console.log('[VoiceService] Tenant aiConfig:', tenant?.aiConfig);
+        console.log('[VoiceService] Tenant aiConfig:', JSON.stringify(tenant?.aiConfig, null, 2));
+        console.log('[VoiceService] aiConfig.systemPrompt value:', tenant?.aiConfig?.systemPrompt);
         
-        if (tenant?.customSystemPrompt && tenant.customSystemPrompt.trim()) {
-            // Use the custom system prompt configured by the organization in dashboard
-            systemPrompt = tenant.customSystemPrompt;
-            console.log('[VoiceService] ✓ Using CUSTOM system prompt from tenant');
-        } else if (tenant?.aiConfig?.systemPrompt && tenant.aiConfig.systemPrompt.trim()) {
-            // Alternative: Use systemPrompt from aiConfig JSON if customSystemPrompt not set
+        // PRIMARY SOURCE: aiConfig.systemPrompt (where frontend saves it)
+        if (tenant?.aiConfig?.systemPrompt && tenant.aiConfig.systemPrompt.trim()) {
             systemPrompt = tenant.aiConfig.systemPrompt;
-            console.log('[VoiceService] ✓ Using system prompt from aiConfig');
+            console.log('[VoiceService] ✓ Using system prompt from aiConfig.systemPrompt (PRIMARY)');
+        }
+        // FALLBACK: customSystemPrompt (legacy field)
+        else if (tenant?.customSystemPrompt && tenant.customSystemPrompt.trim()) {
+            systemPrompt = tenant.customSystemPrompt;
+            console.log('[VoiceService] ✓ Using system prompt from customSystemPrompt field (FALLBACK)');
         } else {
             // Fallback to default system prompt
             console.log('[VoiceService] ⚠ Using DEFAULT system prompt (custom prompt is null or empty)');
