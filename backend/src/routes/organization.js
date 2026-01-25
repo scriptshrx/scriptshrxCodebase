@@ -791,6 +791,9 @@ router.patch('/info',
                     updateData.phoneNumber = cleanedPhone;
                     console.log('[Organization API] Phone number synchronized: twilioConfig AND phoneNumber field set to:', cleanedPhone);
                 }
+
+                // Merge new config into existing
+                updateData.twilioConfig = {
                     ...existingConfig,
                     ...twilioConfig
                 };
