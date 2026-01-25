@@ -785,12 +785,12 @@ router.patch('/info',
                         });
                     }
 
-                    // Use the sanitized number for saving
+                    // Use the sanitized number for saving in BOTH locations
                     twilioConfig.phoneNumber = cleanedPhone;
+                    // IMPORTANT: Also sync to the main phoneNumber field to enforce UNIQUE constraint
+                    updateData.phoneNumber = cleanedPhone;
+                    console.log('[Organization API] Phone number synchronized: twilioConfig AND phoneNumber field set to:', cleanedPhone);
                 }
-
-                // Merge new config into existing
-                updateData.twilioConfig = {
                     ...existingConfig,
                     ...twilioConfig
                 };
