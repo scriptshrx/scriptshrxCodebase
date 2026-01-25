@@ -408,7 +408,7 @@ RESTRICTIONS
 `
         }
         
-        // Append pricing info if not already in custom prompts
+        // Append pricing info if not already in custom prompt
        /* if (!systemPrompt.toLowerCase().includes('pricing') && pricing) {
             systemPrompt += `\n\nPricing Information:\n${pricing}`;
         }*/
