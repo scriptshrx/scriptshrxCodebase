@@ -90,7 +90,7 @@ class VoiceService {
 
                 let t = null;
                 
-                // Helper: Check if tenant has AI configured
+                // Helper: Check if tenant has the AI configured
                 const isAiConfigured = (tenant) => {
                     return tenant && 
                         tenant.aiName && 
