@@ -92,12 +92,11 @@ class VoiceService {
                 
                 // Helper: Check if tenant has AI configured
                 const isAiConfigured = (tenant) => {
-                    return tenant && (
-                        tenant.aiName || 
-                        tenant.aiWelcomeMessage || 
-                        tenant.customSystemPrompt || 
-                        (tenant.aiConfig && Object.keys(tenant.aiConfig).length > 0)
-                    );
+                    return tenant && 
+                        tenant.aiName && 
+                        tenant.aiWelcomeMessage && 
+                        tenant.customSystemPrompt && 
+                        (tenant.aiConfig && Object.keys(tenant.aiConfig).length > 0);
                 };
 
                 // Try to find tenant by exact phone number match
