@@ -90,6 +90,16 @@ class VoiceService {
 
                 let t = null;
                 
+                // Helper: Check if tenant has AI configured
+                const isAiConfigured = (tenant) => {
+                    return tenant && (
+                        tenant.aiName || 
+                        tenant.aiWelcomeMessage || 
+                        tenant.customSystemPrompt || 
+                        (tenant.aiConfig && Object.keys(tenant.aiConfig).length > 0)
+                    );
+                };
+
                 // Try to find tenant by exact phone number match
                 if (calledNumber) {
                     t = await prisma.tenant.findFirst({
@@ -104,18 +114,22 @@ class VoiceService {
                             timezone: true
                         }
                     });
-                    if (t) {
+                    if (t && isAiConfigured(t)) {
                         console.log(`[VoiceService] ✓ Tenant found by phone number: ${t.name} (ID: ${t.id})`);
                         console.log('[VoiceService] customSystemPrompt from db:', t?.customSystemPrompt);
                         console.log('[VoiceService] Full tenant object:', JSON.stringify(t, null, 2));
+                    } else if (t) {
+                        console.log(`[VoiceService] ⚠ Tenant found by phone but has no AI config: ${t.name} (ID: ${t.id})`);
+                        t = null; // Reset to trigger fallback
                     } else {
                         console.log(`[VoiceService] ⚠ No tenant found for phone number: ${calledNumber}`);
                     }
                 }
 
-                // Fallback: get any tenant if not found by phone
+                // Fallback: get any tenant with AI configured
                 if (!t) {
-                    t = await prisma.tenant.findFirst({
+                    // Fetch all tenants with AI config and find the first one that's properly configured
+                    const tenants = await prisma.tenant.findMany({
                         select: {
                             id: true,
                             name: true,
@@ -124,13 +138,18 @@ class VoiceService {
                             customSystemPrompt: true,
                             aiConfig: true,
                             timezone: true
-                        }
+                        },
+                        take: 50 // Limit to avoid fetching thousands
                     });
+
+                    // Find first tenant with AI configured
+                    t = tenants.find(tenant => isAiConfigured(tenant)) || null;
+
                     if (t) {
-                        console.log(`[VoiceService] ⚠ Using fallback tenant: ${t.name} (ID: ${t.id})`);
+                        console.log(`[VoiceService] ✓ Using fallback tenant with AI config: ${t.name} (ID: ${t.id})`);
                         console.log('[VoiceService] customSystemPrompt from fallback:', t?.customSystemPrompt);
                     } else {
-                        console.log('[VoiceService] ✗ No tenants found in database, using hardcoded fallback');
+                        console.log('[VoiceService] ✗ No tenants with AI config found in database, using hardcoded fallback');
                         t = { id: 'fallback', name: 'Our Business', aiName: 'AI Assistant' };
                     }
                 }
