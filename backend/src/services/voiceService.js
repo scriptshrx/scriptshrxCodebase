@@ -95,8 +95,9 @@ class VoiceService {
                     return tenant && 
                         tenant.aiName && 
                         tenant.aiWelcomeMessage && 
-                        tenant.customSystemPrompt && 
-                        (tenant.aiConfig && Object.keys(tenant.aiConfig).length > 0);
+                        tenant.customSystemPrompt 
+                    
+                        //&&(tenant.aiConfig && Object.keys(tenant.aiConfig).length > 0);
                 };
 
                 // Try to find tenant by exact phone number match
