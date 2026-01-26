@@ -540,6 +540,7 @@ RESTRICTIONS
                             type: 'object',
                             properties: {
                                 customerEmail: { type: 'string', description: 'Customer email address' },
+                                customerPhone: { type: 'string', description: 'Customer phone number' },
                                 customerName: { type: 'string', description: 'Customer name' },
                                 bookingDate: { type: 'string', description: 'Booking date in ISO format' },
                                 product: { type: 'string', description: 'Product/service booked' },
@@ -752,6 +753,7 @@ RESTRICTIONS
                 session.lastBooking = {
                     id: booking.id,
                     customerEmail: client.email,
+                    customerPhone: phone,
                     customerName: client.name,
                     bookingDate: booking.date,
                     product: purpose || 'General Consultation'
@@ -909,7 +911,7 @@ RESTRICTIONS
     async handleSendBookingReminder(args, tenantId) {
         console.log(`[VoiceService] Sending Booking Reminder for Tenant ${tenantId}:`, args);
 
-        const { customerEmail, customerName, bookingDate, product, bookingId } = args;
+        const { customerEmail, customerPhone, customerName, bookingDate, product, bookingId } = args;
 
         if (!customerEmail || !customerName || !bookingDate || !product) {
             return { success: false, message: "Missing required details for reminder email." };
@@ -982,7 +984,9 @@ RESTRICTIONS
                 product,
                 bookingId,
                 customerName,
-                'tenant'
+                'tenant',
+                customerEmail,
+                customerPhone
             );
 
             console.log(`[VoiceService] Booking reminder emails sent successfully`);
@@ -1000,7 +1004,7 @@ RESTRICTIONS
     /**
      * Send Booking Reminder Email using Zeptomail
      */
-    async sendBookingReminderEmail(email, recipientName, bookingDate, product, bookingId, otherParty, type) {
+    async sendBookingReminderEmail(email, recipientName, bookingDate, product, bookingId, otherParty, type, customerEmail, customerPhone) {
         try {
             const { SendMailClient } = require('zeptomail');
             
@@ -1044,6 +1048,8 @@ RESTRICTIONS
                         <p>You have received a new booking request from our AI system. Here are the details:</p>
                         <div style="background-color: #f5f5f5; padding: 15px; border-left: 4px solid #28a745; margin: 15px 0;">
                             <p><strong>Customer:</strong> ${otherParty}</p>
+                            <p><strong>Email:</strong> ${customerEmail || 'Not provided'}</p>
+                            <p><strong>Phone:</strong> ${customerPhone || 'Not provided'}</p>
                             <p><strong>Service:</strong> ${product}</p>
                             <p><strong>Date & Time:</strong> ${bookingDate}</p>
                             <p><strong>Booking Reference:</strong> ${bookingId}</p>
