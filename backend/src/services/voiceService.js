@@ -194,7 +194,7 @@ class VoiceService {
                         aiName: true,
                         aiWelcomeMessage: true,
                         customSystemPrompt: true,
-                        aiConfig: true,
+                        //aiConfig: true,
                         timezone: true
                     }
                 });
@@ -202,8 +202,8 @@ class VoiceService {
                     // Validate that tenant has complete AI configuration
                     const hasCompleteAiConfig = found.aiName && 
                                                found.aiWelcomeMessage && 
-                                               found.customSystemPrompt && 
-                                               found.aiConfig;
+                                               found.customSystemPrompt
+                                               //&&found.aiConfig;
                     
                     if (hasCompleteAiConfig) {
                         currentTenant = found;
