@@ -379,35 +379,24 @@ class VoiceService {
             pricing = await this.getPricingContext(tenant.id);
         }
 
-        // 3. Build the System Prompt - Use custom system prompt from tenant config if available
-        // Priority: aiConfig.systemPrompt (most recent source) → customSystemPrompt (legacy) → default
+        // 3. Build the System Prompt - Use customSystemPrompt from tenant
+        // PRIMARY SOURCE: customSystemPrompt field → default
         let systemPrompt;
         
         console.log('[VoiceService] Tenant customSystemPrompt value:', tenant?.customSystemPrompt);
-        console.log('[VoiceService] Tenant aiConfig:', JSON.stringify(tenant?.aiConfig, null, 2));
-        console.log('[VoiceService] aiConfig.systemPrompt value:', tenant?.aiConfig?.systemPrompt);
         
-        // PRIMARY SOURCE: aiConfig.systemPrompt (where frontend saves it)
-        if (tenant?.aiConfig?.systemPrompt && tenant.aiConfig.systemPrompt.trim()) {
-            systemPrompt = tenant.aiConfig.systemPrompt;
-            console.log('\n========================================');
-            console.log(`🎯 SYSTEM PROMPT SOURCE: aiConfig.systemPrompt (PRIMARY)`);
-            console.log(`📝 Prompt length: ${systemPrompt.length} characters`);
-            console.log(`✓ First 200 chars: ${systemPrompt.slice(0, 200)}`);
-            console.log('========================================\n');
-        }
-        // FALLBACK: customSystemPrompt (legacy field)
-        else if (tenant?.customSystemPrompt && tenant.customSystemPrompt.trim()) {
+        // PRIMARY SOURCE: customSystemPrompt (direct field from tenant table)
+        if (tenant?.customSystemPrompt && tenant.customSystemPrompt.trim()) {
             systemPrompt = tenant.customSystemPrompt;
             console.log('\n========================================');
-            console.log(`🎯 SYSTEM PROMPT SOURCE: customSystemPrompt field (FALLBACK)`);
+            console.log(`🎯 SYSTEM PROMPT SOURCE: customSystemPrompt field (PRIMARY)`);
             console.log(`📝 Prompt length: ${systemPrompt.length} characters`);
             console.log(`✓ First 200 chars: ${systemPrompt.slice(0, 200)}`);
             console.log('========================================\n');
         } else {
             // Fallback to default system prompt
             console.log('\n========================================');
-            console.log(`⚠️ SYSTEM PROMPT SOURCE: DEFAULT (custom prompt is null or empty)`);
+            console.log(`⚠️ SYSTEM PROMPT SOURCE: DEFAULT (customSystemPrompt is null or empty)`);
             console.log('========================================\n');
             systemPrompt = `
     You are an AI call agent representing Scriptishrx, a software solutions company.
