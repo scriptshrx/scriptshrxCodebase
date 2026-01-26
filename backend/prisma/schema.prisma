@@ -177,7 +177,6 @@ model Booking {
   date      DateTime
   status    String   @default("Scheduled")
   purpose   String?
-  meetingLink String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

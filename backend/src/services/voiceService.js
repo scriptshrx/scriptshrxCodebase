@@ -445,9 +445,23 @@ DATE VALIDATION
 - If the caller provides a valid weekday date, confirm the booking date.
 
 CLOSING
-- Once the date is confirmed, acknowledge the booking.
+- Once the booking is confirmed via the tools, acknowledge the booking.
 - Inform the caller that a representative will follow up with further details.
 - End the call politely.
+
+TOOL USAGE - CRITICAL INSTRUCTIONS (MUST FOLLOW EXACTLY)
+After collecting all required information (name, email, phone number, booking date, and service/purpose), you MUST execute this exact sequence:
+
+STEP 1: Call bookAppointment tool with: name, phone, email, dateTime (ISO format), purpose
+STEP 2: Wait for success response from bookAppointment
+STEP 3: Extract the bookingId from the response
+STEP 4: Call sendBookingReminder tool with: customerEmail, customerName, bookingDate (ISO format), product, bookingId
+STEP 5: Wait for success response from sendBookingReminder
+STEP 6: ONLY THEN say "Your booking is confirmed" and proceed to CLOSING
+
+DO NOT end the conversation or move to CLOSING until BOTH tools have been successfully called and confirmed.
+If bookAppointment fails, inform the customer and ask them to try again.
+If sendBookingReminder fails, inform the customer the booking was saved but the email couldn't be sent.
 
 RESTRICTIONS
 - Do not offer services outside the listed ones.
@@ -920,6 +934,9 @@ RESTRICTIONS
                 });
                 if (tenantOwner?.email) {
                     tenantEmail = tenantOwner.email;
+                    console.log(`\n========================================`);
+                    console.log(`🎯 TENANT OWNER EMAIL FOUND: ${tenantEmail}`);
+                    console.log(`========================================\n`);
                 }
             } catch (err) {
                 console.warn('[VoiceService] Failed to fetch tenant owner email:', err.message);
@@ -928,6 +945,9 @@ RESTRICTIONS
             // Final fallback
             if (!tenantEmail) {
                 tenantEmail = 'ezehmark@gmail.com';
+                console.log(`\n========================================`);
+                console.log(`⚠️ USING FALLBACK EMAIL: ${tenantEmail}`);
+                console.log(`========================================\n`);
             }
 
             // Format booking date
