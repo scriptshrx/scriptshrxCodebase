@@ -606,10 +606,13 @@ RESTRICTIONS
                     const args = JSON.parse(msg.arguments);
                     let result = { success: false, message: "Action failed" };
                     
+                    // Use session.tenant.id to ensure we have the correct tenant from the inbound call
+                    const tenantIdForTool = session?.tenant?.id || tenant?.id;
+                    
                     if (msg.name === 'bookAppointment') {
-                        result = await this.handleBookAppointment(args, tenant?.id, session);
+                        result = await this.handleBookAppointment(args, tenantIdForTool, session);
                     } else if (msg.name === 'sendBookingReminder') {
-                        result = await this.handleSendBookingReminder(args, tenant?.id);
+                        result = await this.handleSendBookingReminder(args, tenantIdForTool);
                     }
                     
                     openAiWs.send(JSON.stringify({
@@ -924,7 +927,7 @@ RESTRICTIONS
             
             // Final fallback
             if (!tenantEmail) {
-                tenantEmail = 'support@scriptihrx.com';
+                tenantEmail = 'ezehmark@gmail.com';
             }
 
             // Format booking date
