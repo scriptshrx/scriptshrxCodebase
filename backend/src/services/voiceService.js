@@ -1055,10 +1055,20 @@ RESTRICTIONS
             }
 
             await client.sendMail({
-                from: { address: 'support@scriptishrx.net', name: 'ScriptishRx Bookings' },
-                to: [{ email_address: {address:email,name:recipientName} }],
+                from: {
+                    address: 'support@scriptishrx.net',
+                    name: 'ScriptishRx Bookings'
+                },
+                to: [
+                    {
+                        email_address: {
+                            address: email,
+                            name: recipientName
+                        }
+                    }
+                ],
                 subject: subject,
-                html: htmlContent
+                htmlbody: htmlContent
             });
 
             console.log(`[VoiceService] Booking reminder email sent to ${email}`);
