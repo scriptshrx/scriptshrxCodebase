@@ -322,10 +322,12 @@ class VoiceService {
             return;
         }
 
-        // 1. Refresh tenant data from database to ensure we have the latest customSystemPrompt
+        // 1. FORCE FRESH FETCH: Always reload tenant data from database for LATEST customSystemPrompt
+        // This ensures any recent database updates are picked up immediately
         let tenant = session.tenant;
         if (tenant && tenant.id !== 'fallback') {
             try {
+                console.log(`[VoiceService] 🔄 FORCE FRESH FETCH: Reloading tenant "${tenant.name}" (ID: ${tenant.id}) from database...`);
                 const freshTenant = await prisma.tenant.findUnique({
                     where: { id: tenant.id },
                     select: {
@@ -339,7 +341,8 @@ class VoiceService {
                     }
                 });
                 if (freshTenant) {
-                    console.log('[VoiceService] Fresh tenant fetched:', JSON.stringify(freshTenant, null, 2));
+                    console.log('[VoiceService] Fresh tenant fetched from DB:', JSON.stringify(freshTenant, null, 2));
+                    console.log(`[VoiceService] ✓ Updated customSystemPrompt (length: ${freshTenant.customSystemPrompt?.length || 0} chars)`);
                     
                     // Validate that tenant has complete AI configuration
                     const hasCompleteAiConfig = freshTenant.aiName && 
@@ -356,12 +359,14 @@ class VoiceService {
                         tenant = null;
                     } else {
                         tenant = freshTenant;
-                        console.log('[VoiceService] ✓ Tenant data refreshed from database');
+                        console.log('[VoiceService] ✓✓ Tenant data REFRESHED successfully from database');
                     }
+                } else {
+                    console.warn(`[VoiceService] ⚠️ Fresh tenant fetch returned null`);
                 }
             } catch (err) {
                 console.error('[VoiceService] Error refreshing tenant data:', err.message);
-                // Continue with stale tenant data if refresh fails
+                // Continue with session tenant if refresh fails
             }
         }
 
@@ -385,15 +390,25 @@ class VoiceService {
         // PRIMARY SOURCE: aiConfig.systemPrompt (where frontend saves it)
         if (tenant?.aiConfig?.systemPrompt && tenant.aiConfig.systemPrompt.trim()) {
             systemPrompt = tenant.aiConfig.systemPrompt;
-            console.log('[VoiceService] ✓ Using system prompt from aiConfig.systemPrompt (PRIMARY)');
+            console.log('\n========================================');
+            console.log(`🎯 SYSTEM PROMPT SOURCE: aiConfig.systemPrompt (PRIMARY)`);
+            console.log(`📝 Prompt length: ${systemPrompt.length} characters`);
+            console.log(`✓ First 200 chars: ${systemPrompt.slice(0, 200)}`);
+            console.log('========================================\n');
         }
         // FALLBACK: customSystemPrompt (legacy field)
         else if (tenant?.customSystemPrompt && tenant.customSystemPrompt.trim()) {
             systemPrompt = tenant.customSystemPrompt;
-            console.log('[VoiceService] ✓ Using system prompt from customSystemPrompt field (FALLBACK)');
+            console.log('\n========================================');
+            console.log(`🎯 SYSTEM PROMPT SOURCE: customSystemPrompt field (FALLBACK)`);
+            console.log(`📝 Prompt length: ${systemPrompt.length} characters`);
+            console.log(`✓ First 200 chars: ${systemPrompt.slice(0, 200)}`);
+            console.log('========================================\n');
         } else {
             // Fallback to default system prompt
-            console.log('[VoiceService] ⚠ Using DEFAULT system prompt (custom prompt is null or empty)');
+            console.log('\n========================================');
+            console.log(`⚠️ SYSTEM PROMPT SOURCE: DEFAULT (custom prompt is null or empty)`);
+            console.log('========================================\n');
             systemPrompt = `
     You are an AI call agent representing Scriptishrx, a software solutions company.
 Your role is to professionally greet callers, clearly present available services, explain pricing, and guide the caller toward booking a service.
