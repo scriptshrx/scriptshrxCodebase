@@ -154,10 +154,6 @@ model Client {
   notes     String?
   source    String  @default("Direct")
   
-  // AI-Powered Lead Scoring (Enterprise Feature)
-  leadScore      Int     @default(0)  // 0-100 score based on AI analysis
-  lastSentiment  String? // positive, neutral, frustrated, angry
-  
   tenantId  String
   tenant    Tenant  @relation(fields: [tenantId], references: [id])
   createdAt DateTime @default(now())
@@ -169,7 +165,6 @@ model Client {
   @@index([tenantId])
   @@index([phone])
   @@index([email])
-  @@index([leadScore]) // For sorting high-priority leads
   @@map("clients")
 }
 
