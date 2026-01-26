@@ -326,8 +326,24 @@ class VoiceService {
                 });
                 if (freshTenant) {
                     console.log('[VoiceService] Fresh tenant fetched:', JSON.stringify(freshTenant, null, 2));
-                    tenant = freshTenant;
-                    console.log('[VoiceService] ✓ Tenant data refreshed from database');
+                    
+                    // Validate that tenant has complete AI configuration
+                    const hasCompleteAiConfig = freshTenant.aiName && 
+                                               freshTenant.aiWelcomeMessage && 
+                                               freshTenant.customSystemPrompt && 
+                                               freshTenant.aiConfig;
+                    
+                    if (!hasCompleteAiConfig) {
+                        console.warn(`[VoiceService] ⚠️ Tenant "${freshTenant.name}" has incomplete AI configuration. Skipping.`);
+                        console.warn(`  - aiName: ${freshTenant.aiName ? '✓' : '✗'}`);
+                        console.warn(`  - aiWelcomeMessage: ${freshTenant.aiWelcomeMessage ? '✓' : '✗'}`);
+                        console.warn(`  - customSystemPrompt: ${freshTenant.customSystemPrompt ? '✓' : '✗'}`);
+                        console.warn(`  - aiConfig: ${freshTenant.aiConfig ? '✓' : '✗'}`);
+                        tenant = null;
+                    } else {
+                        tenant = freshTenant;
+                        console.log('[VoiceService] ✓ Tenant data refreshed from database');
+                    }
                 }
             } catch (err) {
                 console.error('[VoiceService] Error refreshing tenant data:', err.message);
