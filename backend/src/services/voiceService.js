@@ -345,18 +345,17 @@ class VoiceService {
                     console.log('[VoiceService] Fresh tenant fetched from DB:', JSON.stringify(freshTenant, null, 2));
                     console.log(`[VoiceService] ✓ Updated customSystemPrompt (length: ${freshTenant.customSystemPrompt?.length || 0} chars)`);
                     
-                    // Validate that tenant has complete AI configuration
+                    // Validate that tenant has required AI configuration for voice service
+                    // Note: aiConfig is NOT required - only aiName, aiWelcomeMessage, and customSystemPrompt
                     const hasCompleteAiConfig = freshTenant.aiName && 
                                                freshTenant.aiWelcomeMessage && 
-                                               freshTenant.customSystemPrompt && 
-                                               freshTenant.aiConfig;
+                                               freshTenant.customSystemPrompt;
                     
                     if (!hasCompleteAiConfig) {
                         console.warn(`[VoiceService] ⚠️ Tenant "${freshTenant.name}" has incomplete AI configuration. Skipping.`);
                         console.warn(`  - aiName: ${freshTenant.aiName ? '✓' : '✗'}`);
                         console.warn(`  - aiWelcomeMessage: ${freshTenant.aiWelcomeMessage ? '✓' : '✗'}`);
                         console.warn(`  - customSystemPrompt: ${freshTenant.customSystemPrompt ? '✓' : '✗'}`);
-                        console.warn(`  - aiConfig: ${freshTenant.aiConfig ? '✓' : '✗'}`);
                         tenant = null;
                     } else {
                         tenant = freshTenant;
@@ -556,6 +555,10 @@ RESTRICTIONS
             // Send greeting after a short delay
             setTimeout(async () => {
                 if (openAiWs.readyState === WebSocket.OPEN) {
+                    if (!tenant || !tenant.id) {
+                        console.error('[VoiceService] ❌ Cannot send greeting: tenant is null or has no ID');
+                        return;
+                    }
                     const personalizedGreeting = await this.getGreeting(tenant.id, tenant?.timezone);
                     console.log('[VoiceService] Sending greeting:', personalizedGreeting);
                     openAiWs.send(JSON.stringify({
