@@ -48,7 +48,21 @@ router.get('/',
                             id: true,
                             name: true,
                             phone: true,
-                            email: true
+                            email: true,
+                            callSessions: {
+                                select: {
+                                    id: true,
+                                    callSid: true,
+                                    transcript: true,
+                                    summary: true,
+                                    duration: true,
+                                    direction: true,
+                                    startedAt: true,
+                                    endedAt: true,
+                                    status: true
+                                },
+                                orderBy: { startedAt: 'desc' }
+                            }
                         }
                     }
                 },

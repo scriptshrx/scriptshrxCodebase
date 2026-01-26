@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Calendar as CalendarIcon, Clock, Trash2, Edit2, Check, AlertCircle, X, Search, Video, ExternalLink } from 'lucide-react';
 import EmptyState from '@/components/EmptyState';
+import CallConversations from '@/components/CallConversations';
 
 function Toast({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) {
     useEffect(() => {
@@ -245,7 +246,7 @@ export default function BookingsPage() {
                             <h3 className="font-bold text-lg mb-1">{booking.client?.name || 'Unknown Client'}</h3>
                             <p className="text-gray-500 text-sm mb-4">{booking.purpose}</p>
 
-                            <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-50">
+                            <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-50 mb-4">
                                 <div className="flex items-center">
                                     <Clock className="w-4 h-4 mr-2" />
                                     {new Date(booking.date).toLocaleString()}
@@ -261,6 +262,13 @@ export default function BookingsPage() {
                                         Join
                                     </a>
                                 )}
+                            </div>
+
+                            <div className="border-t border-gray-50 pt-4">
+                                <CallConversations 
+                                    callSessions={booking.client?.callSessions || []} 
+                                    clientName={booking.client?.name || 'Unknown Client'}
+                                />
                             </div>
                         </div>
                     ))}
