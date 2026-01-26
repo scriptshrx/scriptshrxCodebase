@@ -1055,8 +1055,8 @@ RESTRICTIONS
             }
 
             await client.sendMail({
-                from: { address: 'noreply@scriptihrx.com', name: 'ScriptishRx Bookings' },
-                to: [{ email_address: { address: email } }],
+                from: { address: 'support@scriptishrx.net', name: 'ScriptishRx Bookings' },
+                to: [{ email_address: {address:email,name:recipientName} }],
                 subject: subject,
                 html: htmlContent
             });
