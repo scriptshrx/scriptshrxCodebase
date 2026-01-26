@@ -905,8 +905,27 @@ RESTRICTIONS
                 return { success: false, message: "Tenant not found." };
             }
 
-            // Get tenant email - try to get from environment or use default
-            const tenantEmail = process.env.TENANT_SUPPORT_EMAIL || process.env.ADMIN_EMAIL || 'support@scriptihrx.com';
+            // Get tenant email from the users table (OWNER of the tenant)
+            let tenantEmail = process.env.TENANT_SUPPORT_EMAIL || process.env.ADMIN_EMAIL;
+            try {
+                const tenantOwner = await prisma.user.findFirst({
+                    where: {
+                        tenantId: tenantId,
+                        role: 'OWNER'
+                    },
+                    select: { email: true }
+                });
+                if (tenantOwner?.email) {
+                    tenantEmail = tenantOwner.email;
+                }
+            } catch (err) {
+                console.warn('[VoiceService] Failed to fetch tenant owner email:', err.message);
+            }
+            
+            // Final fallback
+            if (!tenantEmail) {
+                tenantEmail = 'support@scriptihrx.com';
+            }
 
             // Format booking date
             const formattedDate = new Date(bookingDate).toLocaleString('en-US', {
