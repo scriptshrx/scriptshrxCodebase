@@ -507,10 +507,27 @@ RESTRICTIONS
                             properties: {
                                 name: { type: 'string' },
                                 phone: { type: 'string' },
+                                email: { type: 'string', description: 'Customer email address' },
                                 dateTime: { type: 'string', description: 'ISO format date string' },
                                 purpose: { type: 'string' }
                             },
                             required: ['phone', 'dateTime']
+                        }
+                    },
+                    {
+                        type: 'function',
+                        name: 'sendBookingReminder',
+                        description: 'Sends a booking reminder email to the customer and tenant after appointment is booked.',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                customerEmail: { type: 'string', description: 'Customer email address' },
+                                customerName: { type: 'string', description: 'Customer name' },
+                                bookingDate: { type: 'string', description: 'Booking date in ISO format' },
+                                product: { type: 'string', description: 'Product/service booked' },
+                                bookingId: { type: 'string', description: 'Booking reference ID' }
+                            },
+                            required: ['customerEmail', 'customerName', 'bookingDate', 'product']
                         }
                     }]
                 }
@@ -588,9 +605,13 @@ RESTRICTIONS
                 if (msg.type === 'response.function_call_arguments.done') {
                     const args = JSON.parse(msg.arguments);
                     let result = { success: false, message: "Action failed" };
+                    
                     if (msg.name === 'bookAppointment') {
-                        result = await this.handleBookAppointment(args, tenant?.id);
+                        result = await this.handleBookAppointment(args, tenant?.id, session);
+                    } else if (msg.name === 'sendBookingReminder') {
+                        result = await this.handleSendBookingReminder(args, tenant?.id);
                     }
+                    
                     openAiWs.send(JSON.stringify({
                         type: 'conversation.item.create',
                         item: {
@@ -658,10 +679,10 @@ RESTRICTIONS
     /**
      * Handle Appointment Booking Tool Call
      */
-    async handleBookAppointment(args, tenantId) {
+    async handleBookAppointment(args, tenantId, session) {
         console.log(`[VoiceService] Booking Request for Tenant ${tenantId}:`, args);
 
-        const { name, phone, dateTime, purpose } = args;
+        const { name, phone, email, dateTime, purpose } = args;
 
         if (!tenantId || !phone || !dateTime) {
             return { success: false, message: "Missing required details (phone or date)." };
@@ -682,8 +703,15 @@ RESTRICTIONS
                         tenantId,
                         name: name || 'Unknown Caller',
                         phone: phone,
+                        email: email || null,
                         source: 'Voice AI'
                     }
+                });
+            } else if (email && !client.email) {
+                // Update client email if it was just provided
+                client = await prisma.client.update({
+                    where: { id: client.id },
+                    data: { email }
                 });
             }
 
@@ -698,10 +726,22 @@ RESTRICTIONS
                 }
             });
 
+            // Store booking info in session for later use
+            if (session) {
+                session.lastBooking = {
+                    id: booking.id,
+                    customerEmail: client.email,
+                    customerName: client.name,
+                    bookingDate: booking.date,
+                    product: purpose || 'General Consultation'
+                };
+            }
+
             console.log(`[VoiceService] Booking confirmed: ${booking.id}`);
             return {
                 success: true,
-                message: `Appointment confirmed for ${new Date(dateTime).toLocaleString()}. Reference: ${booking.id.slice(0, 8)}`
+                message: `Appointment confirmed for ${new Date(dateTime).toLocaleString()}. Reference: ${booking.id.slice(0, 8)}`,
+                bookingId: booking.id
             };
 
         } catch (error) {
@@ -839,6 +879,145 @@ RESTRICTIONS
         } catch (error) {
             console.error('[VoiceService] Error fetching call status:', error);
             return null;
+        }
+    }
+
+    /**
+     * Handle Booking Reminder Email Tool Call
+     */
+    async handleSendBookingReminder(args, tenantId) {
+        console.log(`[VoiceService] Sending Booking Reminder for Tenant ${tenantId}:`, args);
+
+        const { customerEmail, customerName, bookingDate, product, bookingId } = args;
+
+        if (!customerEmail || !customerName || !bookingDate || !product) {
+            return { success: false, message: "Missing required details for reminder email." };
+        }
+
+        try {
+            // Get tenant details for email
+            const tenant = await prisma.tenant.findUnique({
+                where: { id: tenantId },
+                select: { name: true }
+            });
+
+            if (!tenant) {
+                return { success: false, message: "Tenant not found." };
+            }
+
+            // Get tenant email - try to get from environment or use default
+            const tenantEmail = process.env.TENANT_SUPPORT_EMAIL || process.env.ADMIN_EMAIL || 'support@scriptihrx.com';
+
+            // Format booking date
+            const formattedDate = new Date(bookingDate).toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Send email to customer
+            await this.sendBookingReminderEmail(
+                customerEmail,
+                customerName,
+                formattedDate,
+                product,
+                bookingId,
+                tenant.name,
+                'customer'
+            );
+
+            // Send email to tenant
+            await this.sendBookingReminderEmail(
+                tenantEmail,
+                tenant.name,
+                formattedDate,
+                product,
+                bookingId,
+                customerName,
+                'tenant'
+            );
+
+            console.log(`[VoiceService] Booking reminder emails sent successfully`);
+            return {
+                success: true,
+                message: `Booking reminder emails sent to ${customerEmail} and ${tenantEmail}`
+            };
+
+        } catch (error) {
+            console.error('Booking Reminder Email Error:', error);
+            return { success: false, message: "There was an error sending the reminder email." };
+        }
+    }
+
+    /**
+     * Send Booking Reminder Email using Zeptomail
+     */
+    async sendBookingReminderEmail(email, recipientName, bookingDate, product, bookingId, otherParty, type) {
+        try {
+            const { SendMailClient } = require('zeptomail');
+            
+            const url = "https://api.zeptomail.com/v1.1/email";
+            const token = process.env.ZEPTOMAIL_KEY;
+
+            if (!token) {
+                console.error('[VoiceService] ZEPTOMAIL_KEY not configured');
+                return;
+            }
+
+            const client = new SendMailClient({ url, token });
+
+            // Build email content based on type
+            let subject, htmlContent;
+
+            if (type === 'customer') {
+                subject = `Booking Confirmation - ${product}`;
+                htmlContent = `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #007bff;">Booking Confirmation</h2>
+                        <p>Hi ${recipientName},</p>
+                        <p>Your booking has been confirmed. Here are your booking details:</p>
+                        <div style="background-color: #f5f5f5; padding: 15px; border-left: 4px solid #007bff; margin: 15px 0;">
+                            <p><strong>Service:</strong> ${product}</p>
+                            <p><strong>Date & Time:</strong> ${bookingDate}</p>
+                            <p><strong>Company:</strong> ${otherParty}</p>
+                            <p><strong>Reference ID:</strong> ${bookingId}</p>
+                        </div>
+                        <p>A representative from <strong>${otherParty}</strong> will contact you soon with further details.</p>
+                        <p>Thank you for your business!</p>
+                        <p style="color: #666; font-size: 12px; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px;">This is an automated message from ScriptishRx.</p>
+                    </div>
+                `;
+            } else {
+                subject = `New Booking Alert - ${product}`;
+                htmlContent = `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #28a745;">New Booking Received</h2>
+                        <p>Hi ${recipientName},</p>
+                        <p>You have received a new booking request from our AI system. Here are the details:</p>
+                        <div style="background-color: #f5f5f5; padding: 15px; border-left: 4px solid #28a745; margin: 15px 0;">
+                            <p><strong>Customer:</strong> ${otherParty}</p>
+                            <p><strong>Service:</strong> ${product}</p>
+                            <p><strong>Date & Time:</strong> ${bookingDate}</p>
+                            <p><strong>Booking Reference:</strong> ${bookingId}</p>
+                        </div>
+                        <p>Please follow up with the customer to confirm details and provide any additional information they may need.</p>
+                        <p style="color: #666; font-size: 12px; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px;">This is an automated message from ScriptishRx.</p>
+                    </div>
+                `;
+            }
+
+            await client.sendMail({
+                from: { address: 'noreply@scriptihrx.com', name: 'ScriptishRx Bookings' },
+                to: [{ email_address: { address: email } }],
+                subject: subject,
+                html: htmlContent
+            });
+
+            console.log(`[VoiceService] Booking reminder email sent to ${email}`);
+        } catch (error) {
+            console.error('[VoiceService] Error sending booking reminder email:', error);
         }
     }
 }
