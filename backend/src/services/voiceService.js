@@ -198,8 +198,22 @@ class VoiceService {
                     }
                 });
                 if (found) {
-                    currentTenant = found;
-                    console.log(`[VoiceService] Tenant refined via params: ${currentTenant.name}`);
+                    // Validate that tenant has complete AI configuration
+                    const hasCompleteAiConfig = found.aiName && 
+                                               found.aiWelcomeMessage && 
+                                               found.customSystemPrompt && 
+                                               found.aiConfig;
+                    
+                    if (hasCompleteAiConfig) {
+                        currentTenant = found;
+                        console.log(`[VoiceService] Tenant refined via params: ${currentTenant.name}`);
+                    } else {
+                        console.warn(`[VoiceService] ⚠️ Tenant "${found.name}" from params has incomplete AI configuration. Using original tenant.`);
+                        console.warn(`  - aiName: ${found.aiName ? '✓' : '✗'}`);
+                        console.warn(`  - aiWelcomeMessage: ${found.aiWelcomeMessage ? '✓' : '✗'}`);
+                        console.warn(`  - customSystemPrompt: ${found.customSystemPrompt ? '✓' : '✗'}`);
+                        console.warn(`  - aiConfig: ${found.aiConfig ? '✓' : '✗'}`);
+                    }
                 }
             }
 
