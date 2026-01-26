@@ -154,7 +154,7 @@ export default function VoicePage() {
                     setAiConfig({
                         aiName: org.aiConfig?.aiName || org.aiName || 'ScriptishRx Assistant',
                         welcomeMessage: org.aiConfig?.welcomeMessage || org.aiWelcomeMessage || 'Hello, how can I help you today?',
-                        customSystemPrompt: org.aiConfig?.systemPrompt || org.customSystemPrompt || 'You are a helpful assistant. IMPORTANT: Always respond in English only, regardless of the caller\'s language. Never respond in other languages.',
+                        customSystemPrompt: org.customSystemPrompt || org.aiConfig?.systemPrompt || 'You are a helpful assistant. IMPORTANT: Always respond in English only, regardless of the caller\'s language. Never respond in other languages.',
                         model: org.aiConfig?.model || 'gpt-4'
                     });
                     if (org.twilioConfig?.phoneNumber) {
