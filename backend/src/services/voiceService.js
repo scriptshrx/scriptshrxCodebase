@@ -630,6 +630,9 @@ RESTRICTIONS
                     
                     if (msg.name === 'bookAppointment') {
                         result = await this.handleBookAppointment(args, tenantIdForTool, session);
+                        console.log(`\x1b[1m\x1b[36m[VoiceService] bookAppointment tool called successfully\x1b[0m`);
+                        console.log(`\x1b[1m${result.success ? '\x1b[32m✓ RECORDED TO DB SUCCESSFULLY' : '\x1b[31m✗ FAILED TO RECORD TO DB'}\x1b[0m`);
+                        console.log(`\x1b[1mTool Result:\x1b[0m`, result);
                     } else if (msg.name === 'sendBookingReminder') {
                         result = await this.handleSendBookingReminder(args, tenantIdForTool);
                     }
@@ -760,7 +763,14 @@ RESTRICTIONS
                 };
             }
 
-            console.log(`[VoiceService] Booking confirmed: ${booking.id}`);
+            console.log(`\x1b[1m[VoiceService] Booking confirmed: ${booking.id}\x1b[0m`);
+            console.log(`\x1b[1m[VoiceService] Call session details saved to DB (bookings record):\x1b[0m`);
+            console.log({
+                bookingId: booking.id,
+                clientId: client.id,
+                clientName: client.name,
+                callSessions: client.callSessions || '(see DB)'
+            });
             return {
                 success: true,
                 message: `Appointment confirmed for ${new Date(dateTime).toLocaleString()}. Reference: ${booking.id.slice(0, 8)}`,
