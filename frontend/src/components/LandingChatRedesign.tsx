@@ -27,7 +27,9 @@ interface Message {
 }
 
 // Fix: Default to port 5001 for local dev as per server.js
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = typeof window !== 'undefined' && process.env.NODE_ENV === 'development'
+    ? 'http://localhost:5000'
+    : 'https://scriptshrxcodebase.onrender.com';
 
 export default function LandingChatRedesign({ onClose }: { onClose?: () => void }) {
     const [activeTab, setActiveTab] = useState<'home' | 'conversation' | 'faqs'>('home');

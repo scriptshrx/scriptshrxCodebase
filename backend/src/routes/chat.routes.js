@@ -37,7 +37,12 @@ router.get('/status', optionalAuth, (req, res) => {
 // Main Chat Endpoint - Ported from chat.js for Landing Page Specifics
 router.post('/message', optionalAuth, async (req, res) => {
     try {
-        const { message, tenantId, sessionId, systemPrompt: clientSystemPrompt } = req.body;
+        const { message, tenantId, sessionId, systemPrompt: clientSystemPrompt, model: clientModel } = req.body;
+
+        console.log('[Chat] POST /message received');
+        console.log('[Chat] tenantId:', tenantId);
+        console.log('[Chat] clientSystemPrompt provided:', !!clientSystemPrompt);
+        console.log('[Chat] clientModel:', clientModel);
 
         if (!message) {
             return res.status(400).json({ success: false, error: 'Message is required' });
@@ -98,16 +103,23 @@ router.post('/message', optionalAuth, async (req, res) => {
             systemPrompt = clientSystemPrompt;
             console.log(`[Chat] Using client-provided system prompt (${systemPrompt.length} chars)`);
         }
-        // Priority 2: Try to fetch tenant's custom system prompt from database
+        // Priority 2: Try to fetch tenant's aiConfig with new structure from database
         else if (activeTenantId && activeTenantId !== 'landing_guest') {
             try {
                 const tenantData = await prisma.tenant.findUnique({
                     where: { id: activeTenantId },
-                    select: { customSystemPrompt: true }
+                    select: { aiConfig: true, customSystemPrompt: true }
                 });
-                if (tenantData?.customSystemPrompt) {
+                
+                // Try new aiConfig structure first
+                if (tenantData?.aiConfig?.systemPrompt) {
+                    systemPrompt = tenantData.aiConfig.systemPrompt;
+                    console.log(`[Chat] Using tenant's aiConfig.systemPrompt (${systemPrompt.length} chars)`);
+                }
+                // Fallback to legacy customSystemPrompt field
+                else if (tenantData?.customSystemPrompt) {
                     systemPrompt = tenantData.customSystemPrompt;
-                    console.log(`[Chat] Using tenant's custom system prompt (${systemPrompt.length} chars)`);
+                    console.log(`[Chat] Using tenant's legacy customSystemPrompt (${systemPrompt.length} chars)`);
                 }
             } catch (err) {
                 console.warn(`[Chat] Failed to fetch tenant's custom prompt:`, err.message);
@@ -176,8 +188,12 @@ router.post('/message', optionalAuth, async (req, res) => {
             }
         ];
 
+        // Determine which model to use (client preference or env default)
+        const modelToUse = clientModel || process.env.OPENAI_MODEL || "gpt-4o";
+        console.log('[Chat] Using model:', modelToUse);
+
         let completion = await openai.chat.completions.create({
-            model: process.env.OPENAI_MODEL || "gpt-4o",
+            model: modelToUse,
             messages: messages,
             tools: tools,
             tool_choice: "auto",
@@ -209,7 +225,7 @@ router.post('/message', optionalAuth, async (req, res) => {
                     });
 
                     completion = await openai.chat.completions.create({
-                        model: process.env.OPENAI_MODEL || "gpt-4o",
+                        model: modelToUse,
                         messages: messages
                     });
                     aiMessage = completion.choices[0].message;
@@ -244,7 +260,14 @@ router.post('/message', optionalAuth, async (req, res) => {
 
     } catch (error) {
         console.error('Error in chat route:', error);
-        res.status(500).json({ success: false, error: 'Internal server error', message: error.message });
+        console.error('Error stack:', error.stack);
+        console.error('Error message:', error.message);
+        return res.status(500).json({ 
+            success: false, 
+            error: 'Internal server error', 
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 

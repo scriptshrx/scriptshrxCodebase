@@ -8,7 +8,7 @@ import { Input } from './ui/Input';
 
 const API_URL = typeof window !== 'undefined' && process.env.NODE_ENV === 'development'
     ? 'http://localhost:5000'
-    : (typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'));
+    : 'https://scriptshrxcodebase.onrender.com';
 
 interface Message {
     id: string;
@@ -111,18 +111,28 @@ export default function ChatInterface({ tenantId: propTenantId, token, isDashboa
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
+            const requestBody = {
+                message: userMessage,
+                tenantId: tenantId || 'default',
+                systemPrompt: systemPrompt,
+                model: model
+            };
+
+            console.log('[ChatInterface] Sending to:', `${apiUrl}/api/chat/message`);
+            console.log('[ChatInterface] Request body:', requestBody);
+
             const res = await fetch(`${apiUrl}/api/chat/message`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({
-                    message: userMessage,
-                    tenantId: tenantId || 'default',
-                    systemPrompt: systemPrompt,
-                    model: model
-                })
+                body: JSON.stringify(requestBody)
             });
 
+            console.log('[ChatInterface] Response status:', res.status);
+            console.log('[ChatInterface] Response headers:', res.headers);
+
             const data = await res.json();
+
+            console.log('[ChatInterface] Response:', data);
 
             if (data.success && data.response) {
                 const assistantMsg: Message = {
@@ -133,14 +143,16 @@ export default function ChatInterface({ tenantId: propTenantId, token, isDashboa
                 };
                 setMessages(prev => [...prev, assistantMsg]);
             } else {
-                throw new Error(data.error || 'Failed to get response');
+                const errorMessage = data.message || data.error || 'Failed to get response from AI';
+                console.error('[ChatInterface] API returned error:', errorMessage);
+                throw new Error(errorMessage);
             }
         } catch (error: any) {
             console.error('Error sending message:', error);
             const errorMsg: Message = {
                 id: `error_${Date.now()}`,
                 role: 'assistant',
-                content: 'Hello! I am your AI Business Concierge. I can help with bookings, client management, or analytics. How can I assist you today?',
+                content: `Sorry, I encountered an error: ${error.message || 'Unable to connect to the AI service. Please try again.'}`,
                 timestamp: new Date().toISOString(),
                 error: true
             };
