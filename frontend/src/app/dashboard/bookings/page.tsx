@@ -41,8 +41,7 @@ export default function BookingsPage() {
         try {
             const token = localStorage.getItem('token');
             if (!token) return;
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-            const res = await fetch(`${apiUrl}/api/bookings`, {
+            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/bookings', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -63,8 +62,7 @@ export default function BookingsPage() {
         try {
             const token = localStorage.getItem('token');
             if (!token) return;
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-            const res = await fetch(`${apiUrl}/api/clients`, {
+            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/clients', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -94,9 +92,8 @@ export default function BookingsPage() {
         try {
             const token = localStorage.getItem('token');
             const dateTime = new Date(`${newBooking.date}T${newBooking.time}`);
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-            const res = await fetch(`${apiUrl}/api/bookings`, {
+            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/bookings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -129,8 +126,7 @@ export default function BookingsPage() {
         if (!confirm('Are you sure you want to delete this booking?')) return;
         try {
             const token = localStorage.getItem('token');
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-            const res = await fetch(`${apiUrl}/api/bookings/${id}`, {
+            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/bookings/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -164,9 +160,8 @@ export default function BookingsPage() {
         try {
             const token = localStorage.getItem('token');
             const dateTime = new Date(`${editForm.date}T${editForm.time}`);
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-            const res = await fetch(`${apiUrl}/api/bookings/${editBooking.id}`, {
+            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/bookings/${editBooking.id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
