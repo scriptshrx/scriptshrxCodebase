@@ -931,6 +931,16 @@ RESTRICTIONS
             return { success: false, message: "Missing required details for reminder email." };
         }
 
+        // CRITICAL: Check if bookingId is provided
+        if (!bookingId) {
+            console.error(`\x1b[1m\x1b[31m[VoiceService] ❌ BOOKING ID MISSING!\x1b[0m`);
+            console.error(`\x1b[1m[VoiceService] This likely means:\x1b[0m`);
+            console.error(`\x1b[1m  1. sendBookingReminder was called BEFORE bookAppointment\x1b[0m`);
+            console.error(`\x1b[1m  2. bookAppointment did not return successfully\x1b[0m`);
+            console.error(`\x1b[1m  3. The AI did not extract bookingId from bookAppointment response\x1b[0m`);
+            return { success: false, message: "Missing bookingId - booking reference cannot be sent." };
+        }
+
         try {
             // Get tenant details for email
             const tenant = await prisma.tenant.findUnique({
@@ -1003,7 +1013,12 @@ RESTRICTIONS
                 customerPhone
             );
 
-            console.log(`[VoiceService] Booking reminder emails sent successfully`);
+            console.log(`\x1b[1m[VoiceService] ✅ Booking reminder emails sent successfully\x1b[0m`);
+            console.log(`\x1b[1m[VoiceService] Email sent to:\x1b[0m`);
+            console.log(`  📧 Customer: ${customerEmail}`);
+            console.log(`  📧 Tenant: ${tenantEmail}`);
+            console.log(`  📞 Phone on file: ${customerPhone || 'Not provided'}`);
+            console.log(`  🔖 Reference: ${bookingId}`);
             return {
                 success: true,
                 message: `Booking reminder emails sent to ${customerEmail} and ${tenantEmail}`

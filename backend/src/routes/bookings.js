@@ -29,6 +29,11 @@ router.get('/',
             const tenantId = req.scopedTenantId;
             const { status, clientId, from, to } = req.query;
 
+            console.log(`\x1b[1m[Bookings API] GET /api/bookings\x1b[0m`);
+            console.log(`  📊 TenantId: ${tenantId}`);
+            console.log(`  👤 UserId: ${req.user?.id}`);
+            console.log(`  🔍 Filters: status=${status}, clientId=${clientId}, from=${from}, to=${to}`);
+
             const whereClause = { tenantId };
 
             if (status) whereClause.status = status;
@@ -69,6 +74,18 @@ router.get('/',
                 orderBy: { date: 'asc' }
             });
 
+            console.log(`  ✅ Found ${bookings.length} booking(s)`);
+            if (bookings.length === 0) {
+                console.log(`\x1b[1m\x1b[33m[Bookings API] ⚠️ NO BOOKINGS FOUND\x1b[0m`);
+                console.log(`  Query clause:`, JSON.stringify(whereClause, null, 2));
+                
+                // Debug: Check if any bookings exist for ANY tenant
+                const allBookings = await prisma.booking.findMany({ take: 5 });
+                console.log(`  📊 Total bookings in DB: ${allBookings.length}`);
+                if (allBookings.length > 0) {
+                    console.log(`  Recent bookings:`, allBookings.map(b => ({ id: b.id, tenantId: b.tenantId, clientId: b.clientId })));
+                }
+            }
             res.json({ success: true, bookings });
         } catch (error) {
             console.error('Error fetching bookings:', error);
