@@ -15,6 +15,52 @@ const app = express();
 // Trust Proxy (Crucial for Render/Heroku Rate Limiting)
 app.set('trust proxy', 1);
 
+// ==================== CORS MUST BE FIRST ====================
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'http://localhost:5000',
+            'http://localhost:5001',
+            'https://scriptishrx.net',
+            'https://www.scriptishrx.net',
+            'https://scriptishrxcodebase.onrender.com',
+            process.env.FRONTEND_URL
+        ].filter(Boolean);
+
+        console.log(`[CORS] Request from origin: ${origin}`);
+
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowedOrigins.includes(origin) || origin?.includes('onrender.com')) {
+            console.log(`[CORS] ✅ ALLOWED`);
+            callback(null, true);
+        } else {
+            console.warn(`[CORS] ❌ BLOCKED`);
+            callback(new Error('CORS not allowed'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'Accept'],
+    exposedHeaders: ['Content-Length', 'X-JSON-Response-Length'],
+    optionsSuccessStatus: 200,
+    maxAge: 3600
+};
+
+app.use(cors(corsOptions));
+
+// Preflight handler - catches OPTIONS requests
+app.options('*', (req, res) => {
+    console.log(`[Preflight] OPTIONS ${req.url} from ${req.headers.origin}`);
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-Id, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.sendStatus(200);
+});
+
+// ==================== SECURITY MIDDLEWARE ====================
 // Security & Middleware
 app.use(helmet({
     contentSecurityPolicy: {
@@ -38,56 +84,6 @@ app.use(hpp());    // Prevent HTTP Parameter Pollution
 app.use((req, res, next) => {
     req.id = req.headers['x-request-id'] || crypto.randomUUID();
     res.setHeader('X-Request-Id', req.id);
-    next();
-});
-
-// Configure CORS with dynamic origin checking for Render domains
-const corsOptions = {
-    origin: function (origin, callback) {
-        const allowedOrigins = [
-            'http://localhost:3000',
-            'http://localhost:3001',
-            'http://localhost:5000',
-            'http://localhost:5001',
-            'https://scriptishrx.net',
-            'https://www.scriptishrx.net',
-            'https://scriptishrxcodebase.onrender.com',
-            process.env.FRONTEND_URL
-        ].filter(Boolean);
-
-        console.log(`[CORS] Preflight/Request from: ${origin}`);
-
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin || allowedOrigins.includes(origin) || origin?.includes('onrender.com')) {
-            console.log(`[CORS] ✅ ALLOWED: ${origin}`);
-            callback(null, true);
-        } else {
-            console.warn(`[CORS] ❌ BLOCKED: ${origin}`);
-            callback(new Error('CORS not allowed'));
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'Accept'],
-    exposedHeaders: ['Content-Length', 'X-JSON-Response-Length'],
-    optionsSuccessStatus: 200,
-    maxAge: 3600
-};
-
-app.use(cors(corsOptions));
-
-// Manual preflight handler for OPTIONS requests
-app.use((req, res, next) => {
-    if (req.method === 'OPTIONS') {
-        console.log(`[CORS] OPTIONS preflight from: ${req.headers.origin}`);
-        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD');
-        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-Id, Accept');
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Access-Control-Max-Age', '3600');
-        console.log(`[CORS] ✅ OPTIONS response sent`);
-        return res.sendStatus(200);
-    }
     next();
 });
 
