@@ -37,7 +37,7 @@ router.get('/status', optionalAuth, (req, res) => {
 // Main Chat Endpoint - Ported from chat.js for Landing Page Specifics
 router.post('/message', optionalAuth, async (req, res) => {
     try {
-        const { message, tenantId, sessionId } = req.body;
+        const { message, tenantId, sessionId, systemPrompt: clientSystemPrompt } = req.body;
 
         if (!message) {
             return res.status(400).json({ success: false, error: 'Message is required' });
@@ -90,8 +90,33 @@ router.post('/message', optionalAuth, async (req, res) => {
             });
         }
 
-        // 3. Construct System Prompt (ScriptishRx Specific)
-        const systemPrompt = `You are ScriptishRx AI, the intelligent, calm, and responsible AI assistant for ScriptishRx (an AI-powered Business Automation Platform).
+        // 3. Construct System Prompt - Use Tenant's Custom Prompt if Available
+        let systemPrompt;
+
+        // Priority 1: Use client-provided system prompt (from dashboard chat editor)
+        if (clientSystemPrompt) {
+            systemPrompt = clientSystemPrompt;
+            console.log(`[Chat] Using client-provided system prompt (${systemPrompt.length} chars)`);
+        }
+        // Priority 2: Try to fetch tenant's custom system prompt from database
+        else if (activeTenantId && activeTenantId !== 'landing_guest') {
+            try {
+                const tenantData = await prisma.tenant.findUnique({
+                    where: { id: activeTenantId },
+                    select: { customSystemPrompt: true }
+                });
+                if (tenantData?.customSystemPrompt) {
+                    systemPrompt = tenantData.customSystemPrompt;
+                    console.log(`[Chat] Using tenant's custom system prompt (${systemPrompt.length} chars)`);
+                }
+            } catch (err) {
+                console.warn(`[Chat] Failed to fetch tenant's custom prompt:`, err.message);
+            }
+        }
+
+        // Priority 3: Fallback to default system prompt if tenant's is not available
+        if (!systemPrompt) {
+            systemPrompt = `You are ScriptishRx AI, the intelligent, calm, and responsible AI assistant for ScriptishRx (an AI-powered Business Automation Platform).
 
         CORE KNOWLEDGE BASE (OFFICIAL FAQ):
         1. PRICING PLANS:
@@ -122,6 +147,7 @@ router.post('/message', optionalAuth, async (req, res) => {
         3. LEAD CAPTURE: If the user seems interested in signing up or a demo, ask for their Name and Email (trigger 'saveLead').
         4. UNKNOWN: If the answer isn't in the FAQ above or context, politely offer to connect them with support or suggest they visit the website. Do not make up prices.
         `;
+        }
 
         // 4. OpenAI Call with History + Tools
         const messages = [

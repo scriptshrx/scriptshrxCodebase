@@ -22,9 +22,10 @@ interface ChatInterfaceProps {
     token?: string;
     tenantId?: string;
     isDashboard?: boolean;
+    systemPrompt?: string;
 }
 
-export default function ChatInterface({ tenantId: propTenantId, token, isDashboard = false }: ChatInterfaceProps) {
+export default function ChatInterface({ tenantId: propTenantId, token, isDashboard = false, systemPrompt }: ChatInterfaceProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -111,7 +112,8 @@ export default function ChatInterface({ tenantId: propTenantId, token, isDashboa
                 headers,
                 body: JSON.stringify({
                     message: userMessage,
-                    tenantId: tenantId || 'default'
+                    tenantId: tenantId || 'default',
+                    systemPrompt: systemPrompt
                 })
             });
 
