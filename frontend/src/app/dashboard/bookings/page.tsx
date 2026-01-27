@@ -41,7 +41,8 @@ export default function BookingsPage() {
         try {
             const token = localStorage.getItem('token');
             if (!token) return;
-            const res = await fetch('/api/bookings', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${apiUrl}/api/bookings`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -62,7 +63,8 @@ export default function BookingsPage() {
         try {
             const token = localStorage.getItem('token');
             if (!token) return;
-            const res = await fetch('/api/clients', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${apiUrl}/api/clients`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -92,8 +94,9 @@ export default function BookingsPage() {
         try {
             const token = localStorage.getItem('token');
             const dateTime = new Date(`${newBooking.date}T${newBooking.time}`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-            const res = await fetch('/api/bookings', {
+            const res = await fetch(`${apiUrl}/api/bookings`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -126,7 +129,8 @@ export default function BookingsPage() {
         if (!confirm('Are you sure you want to delete this booking?')) return;
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`/api/bookings/${id}`, {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${apiUrl}/api/bookings/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -160,8 +164,9 @@ export default function BookingsPage() {
         try {
             const token = localStorage.getItem('token');
             const dateTime = new Date(`${editForm.date}T${editForm.time}`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-            const res = await fetch(`/api/bookings/${editBooking.id}`, {
+            const res = await fetch(`${apiUrl}/api/bookings/${editBooking.id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
