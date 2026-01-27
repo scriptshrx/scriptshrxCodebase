@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Plus, Calendar as CalendarIcon, Clock, Trash2, Edit2, Check, AlertCircle, X, Search, Video, ExternalLink } from 'lucide-react';
 import EmptyState from '@/components/EmptyState';
 import CallConversations from '@/components/CallConversations';
-import api from '@/lib/api';
+
+const API_BASE = 'https://scriptshrxcodebase.onrender.com';
 
 function Toast({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) {
     useEffect(() => {
@@ -41,33 +43,35 @@ export default function BookingsPage() {
     const fetchBookings = async () => {
         try {
             console.log('[Bookings] Fetching bookings...');
-            const response = await api.get('/api/bookings');
+            const token = localStorage.getItem('token');
+            
+            const response = await axios.get(`${API_BASE}/api/bookings`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
             console.log(`[Bookings] ✅ Received ${response.data.bookings?.length || 0} bookings`);
             setBookings(response.data.bookings || []);
         } catch (error: any) {
-            if (error.response?.data?.code === 'TOKEN_EXPIRED') {
-                console.error('❌ Token expired - please log in again');
-                localStorage.removeItem('token');
-                window.location.href = '/login';
-            } else {
-                console.error('❌ Error fetching bookings:', error.message);
-            }
+            console.error('[Bookings] ❌ Error:', error.message);
+            console.error('[Bookings] Status:', error.response?.status);
+            console.error('[Bookings] Data:', error.response?.data);
         }
     };
 
     const fetchClients = async () => {
         try {
             console.log('[Bookings] Fetching clients...');
-            const response = await api.get('/api/clients');
+            const token = localStorage.getItem('token');
+            
+            const response = await axios.get(`${API_BASE}/api/clients`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
             console.log(`[Bookings] ✅ Received ${response.data.clients?.length || 0} clients`);
             setClients(response.data.clients || []);
         } catch (error: any) {
-            if (error.response?.data?.code === 'TOKEN_EXPIRED') {
-                localStorage.removeItem('token');
-                window.location.href = '/login';
-            } else {
-                console.error('[Bookings] Error fetching clients:', error.message);
-            }
+            console.error('[Bookings] ❌ Error fetching clients:', error.message);
+            console.error('[Bookings] Status:', error.response?.status);
         }
     };
 
@@ -93,13 +97,16 @@ export default function BookingsPage() {
         }
 
         try {
+            const token = localStorage.getItem('token');
             const dateTime = new Date(`${newBooking.date}T${newBooking.time}`);
 
-            await api.post('/api/bookings', {
+            await axios.post(`${API_BASE}/api/bookings`, {
                 clientId: newBooking.clientId,
                 date: dateTime.toISOString(),
                 purpose: newBooking.purpose,
                 meetingLink: newBooking.meetingLink || undefined
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             setShowAddModal(false);
@@ -107,28 +114,24 @@ export default function BookingsPage() {
             fetchBookings();
             showToast('Booking created successfully!', 'success');
         } catch (error: any) {
-            if (error.response?.data?.code === 'TOKEN_EXPIRED') {
-                localStorage.removeItem('token');
-                window.location.href = '/login';
-            } else {
-                showToast(error.response?.data?.error || 'Failed to create booking.', 'error');
-            }
+            console.error('[Bookings] Error creating booking:', error.message);
+            console.error('[Bookings] Response:', error.response?.data);
+            showToast(error.response?.data?.error || 'Failed to create booking.', 'error');
         }
     };
 
     const handleDeleteBooking = async (id: string) => {
         if (!confirm('Are you sure you want to delete this booking?')) return;
         try {
-            await api.delete(`/api/bookings/${id}`);
+            const token = localStorage.getItem('token');
+            await axios.delete(`${API_BASE}/api/bookings/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             fetchBookings();
             showToast('Booking deleted successfully.', 'success');
         } catch (error: any) {
-            if (error.response?.data?.code === 'TOKEN_EXPIRED') {
-                localStorage.removeItem('token');
-                window.location.href = '/login';
-            } else {
-                showToast('Failed to delete booking.', 'error');
-            }
+            console.error('[Bookings] Error deleting booking:', error.message);
+            showToast('Failed to delete booking.', 'error');
         }
     };
 
@@ -148,13 +151,16 @@ export default function BookingsPage() {
     const handleUpdateBooking = async () => {
         if (!editBooking) return;
         try {
+            const token = localStorage.getItem('token');
             const dateTime = new Date(`${editForm.date}T${editForm.time}`);
 
-            await api.patch(`/api/bookings/${editBooking.id}`, {
+            await axios.patch(`${API_BASE}/api/bookings/${editBooking.id}`, {
                 date: dateTime.toISOString(),
                 purpose: editForm.purpose,
                 status: editForm.status,
                 meetingLink: editForm.meetingLink || undefined
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             setShowEditModal(false);
@@ -162,12 +168,8 @@ export default function BookingsPage() {
             fetchBookings();
             showToast('Booking updated successfully!', 'success');
         } catch (error: any) {
-            if (error.response?.data?.code === 'TOKEN_EXPIRED') {
-                localStorage.removeItem('token');
-                window.location.href = '/login';
-            } else {
-                showToast(error.response?.data?.error || 'Failed to update booking.', 'error');
-            }
+            console.error('[Bookings] Error updating booking:', error.message);
+            showToast(error.response?.data?.error || 'Failed to update booking.', 'error');
         }
     };
 

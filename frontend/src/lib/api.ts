@@ -29,13 +29,17 @@ api.interceptors.request.use((config) => {
 // Response Interceptor: Handle 401 (Refresh Logic)
 api.interceptors.response.use(
     (response) => {
-        console.log(`[API Interceptor] ✅ ${response.status} ${response.config.url}`);
+        console.log(`[API Interceptor] ✅ SUCCESS ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
         return response;
     },
     async (error) => {
         const originalRequest = error.config;
-        console.error(`[API Interceptor] ❌ ${error.response?.status || 'Network Error'} ${error.config?.url}`);
-        console.error(`[API Interceptor] Error message: ${error.message}`);
+        console.error(`[API Interceptor] ❌ ERROR`);
+        console.error(`  Status: ${error.response?.status || 'No Response'}`);
+        console.error(`  Method: ${error.config?.method?.toUpperCase()}`);
+        console.error(`  URL: ${error.config?.url}`);
+        console.error(`  Message: ${error.message}`);
+        console.error(`  CORS: ${error.response?.headers?.['access-control-allow-origin'] ? 'ALLOWED' : 'BLOCKED'}`);
 
         // If 401 and we haven't retried yet
         if (error.response?.status === 401 && !originalRequest._retry) {
