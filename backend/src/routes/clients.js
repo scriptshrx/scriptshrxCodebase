@@ -17,6 +17,11 @@ router.get('/',
     checkPermission('clients', 'read'),
     async (req, res) => {
         try {
+            console.log(`\x1b[1m[Clients API] GET /api/clients\x1b[0m`);
+            console.log(`  📋 Fetching clients`);
+            console.log(`  TenantId: ${req.scopedTenantId}`);
+            console.log(`  Search query: ${req.query.search || 'none'}`);
+            
             const tenantId = req.scopedTenantId;
             const { search } = req.query;
 

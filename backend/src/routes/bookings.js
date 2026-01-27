@@ -108,6 +108,10 @@ router.post('/',
     checkPermission('bookings', 'create'),
     async (req, res, next) => {
         try {
+            console.log(`\x1b[1m[Bookings API] POST /api/bookings\x1b[0m`);
+            console.log(`  📝 Creating new booking`);
+            console.log(`  Request body:`, JSON.stringify(req.body, null, 2));
+            
             const tenantId = req.scopedTenantId || req.body.tenantId || req.user?.tenantId;
 
             if (!tenantId) {
@@ -285,6 +289,11 @@ router.patch('/:id',
     checkPermission('bookings', 'update'),
     async (req, res) => {
         try {
+            console.log(`\x1b[1m[Bookings API] PATCH /api/bookings/:id\x1b[0m`);
+            console.log(`  ✏️ Updating booking`);
+            console.log(`  Booking ID: ${req.params.id}`);
+            console.log(`  Update data:`, JSON.stringify(req.body, null, 2));
+            
             const tenantId = req.scopedTenantId;
             const { id } = req.params;
 
@@ -351,6 +360,10 @@ router.delete('/:id',
     checkPermission('bookings', 'delete'),
     async (req, res) => {
         try {
+            console.log(`\x1b[1m[Bookings API] DELETE /api/bookings/:id\x1b[0m`);
+            console.log(`  🗑️ Deleting booking`);
+            console.log(`  Booking ID: ${req.params.id}`);
+            
             const tenantId = req.scopedTenantId;
             const { id } = req.params;
 
