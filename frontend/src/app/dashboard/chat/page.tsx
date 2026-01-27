@@ -314,7 +314,14 @@ export default function ChatPage() {
                         <div className="flex-1 overflow-hidden bg-gray-50 p-4 relative">
                             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5 pointer-events-none" />
                             <div className="h-full rounded-2xl overflow-hidden shadow-lg border border-gray-200 bg-white relative z-10">
-                                <ChatInterface isDashboard={true} systemPrompt={aiConfig.customSystemPrompt} />
+                                <ChatInterface 
+                                    isDashboard={true} 
+                                    systemPrompt={aiConfig.customSystemPrompt}
+                                    aiName={aiConfig.aiName}
+                                    welcomeMessage={aiConfig.welcomeMessage}
+                                    model={aiConfig.model}
+                                    faqs={aiConfig.faqs}
+                                />
                             </div>
                         </div>
                     </div>

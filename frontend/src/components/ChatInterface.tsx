@@ -23,9 +23,13 @@ interface ChatInterfaceProps {
     tenantId?: string;
     isDashboard?: boolean;
     systemPrompt?: string;
+    aiName?: string;
+    welcomeMessage?: string;
+    model?: string;
+    faqs?: Array<{ question: string; answer: string }>;
 }
 
-export default function ChatInterface({ tenantId: propTenantId, token, isDashboard = false, systemPrompt }: ChatInterfaceProps) {
+export default function ChatInterface({ tenantId: propTenantId, token, isDashboard = false, systemPrompt, aiName, welcomeMessage, model = 'gpt-4', faqs }: ChatInterfaceProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -113,7 +117,8 @@ export default function ChatInterface({ tenantId: propTenantId, token, isDashboa
                 body: JSON.stringify({
                     message: userMessage,
                     tenantId: tenantId || 'default',
-                    systemPrompt: systemPrompt
+                    systemPrompt: systemPrompt,
+                    model: model
                 })
             });
 
@@ -197,7 +202,7 @@ export default function ChatInterface({ tenantId: propTenantId, token, isDashboa
                     </div>
                     <div>
                         <h3 className={cn("font-bold text-sm tracking-tight", isDashboard ? "text-slate-900 text-base" : "text-white")}>
-                            {isDashboard ? "AI Concierge" : "AI Assistant"}
+                            {aiName || (isDashboard ? "AI Concierge" : "AI Assistant")}
                         </h3>
                         <div className="flex items-center gap-1.5">
                             <span className={cn("w-2 h-2 rounded-full animate-pulse", isOnline ? "bg-emerald-500" : "bg-rose-500")}></span>
@@ -231,11 +236,11 @@ export default function ChatInterface({ tenantId: propTenantId, token, isDashboa
                             How can I help you?
                         </h3>
                         <p className="text-slate-500 text-sm max-w-[260px] mx-auto leading-relaxed mb-8">
-                            I'm here to assist with bookings, answer questions, or help you navigate.
+                            {welcomeMessage || "I'm here to assist with bookings, answer questions, or help you navigate."}
                         </p>
 
                         <div className={cn("grid gap-2.5 w-full", isDashboard ? "grid-cols-1 sm:grid-cols-2 max-w-md" : "grid-cols-1")}>
-                            {["Check pricing information", "How does the system work?", "Schedule a new demo"].map((suggestion) => (
+                            {(faqs && faqs.length > 0 ? faqs.map(faq => faq.question) : ["Check pricing information", "How does the system work?", "Schedule a new demo"]).map((suggestion) => (
                                 <button
                                     key={suggestion}
                                     onClick={() => {
