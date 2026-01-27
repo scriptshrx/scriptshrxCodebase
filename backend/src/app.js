@@ -55,8 +55,7 @@ const corsOptions = {
             process.env.FRONTEND_URL
         ].filter(Boolean);
 
-        console.log(`[CORS] Checking origin: ${origin}`);
-        console.log(`[CORS] Allowed origins: ${allowedOrigins.join(', ')}`);
+        console.log(`[CORS] Preflight/Request from: ${origin}`);
 
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin || allowedOrigins.includes(origin) || origin?.includes('onrender.com')) {
@@ -69,11 +68,28 @@ const corsOptions = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
-    optionsSuccessStatus: 200
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'Accept'],
+    exposedHeaders: ['Content-Length', 'X-JSON-Response-Length'],
+    optionsSuccessStatus: 200,
+    maxAge: 3600
 };
 
 app.use(cors(corsOptions));
+
+// Manual preflight handler for OPTIONS requests
+app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+        console.log(`[CORS] OPTIONS preflight from: ${req.headers.origin}`);
+        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-Id, Accept');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Max-Age', '3600');
+        console.log(`[CORS] ✅ OPTIONS response sent`);
+        return res.sendStatus(200);
+    }
+    next();
+});
 
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
