@@ -752,6 +752,16 @@ RESTRICTIONS
                     date: new Date(dateTime),
                     purpose: purpose || 'General Consultation',
                     status: 'Scheduled'
+                },
+                include: {
+                    client: {
+                        select: {
+                            id: true,
+                            name: true,
+                            phone: true,
+                            email: true
+                        }
+                    }
                 }
             });
 

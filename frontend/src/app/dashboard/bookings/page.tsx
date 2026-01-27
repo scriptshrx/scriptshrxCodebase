@@ -50,6 +50,7 @@ export default function BookingsPage() {
             });
             
             console.log(`[Bookings] ✅ Received ${response.data.bookings?.length || 0} bookings`);
+            console.log('[Bookings] Sample booking data:', response.data.bookings?.[0]);
             setBookings(response.data.bookings || []);
         } catch (error: any) {
             console.error('[Bookings] ❌ Error:', error.message);
@@ -229,6 +230,25 @@ export default function BookingsPage() {
                             <h3 className="font-bold text-lg mb-1">{booking.client?.name || 'Unknown Client'}</h3>
                             <p className="text-gray-500 text-sm mb-4">{booking.purpose}</p>
 
+                            <div className="mb-4 space-y-2">
+                                {booking.client?.email && (
+                                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                                        <span className="font-medium">📧</span>
+                                        <a href={`mailto:${booking.client.email}`} className="hover:text-blue-600 break-all">
+                                            {booking.client.email}
+                                        </a>
+                                    </p>
+                                )}
+                                {booking.client?.phone && (
+                                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                                        <span className="font-medium">📱</span>
+                                        <a href={`tel:${booking.client.phone}`} className="hover:text-blue-600">
+                                            {booking.client.phone}
+                                        </a>
+                                    </p>
+                                )}
+                            </div>
+
                             <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-50 mb-4">
                                 <div className="flex items-center">
                                     <Clock className="w-4 h-4 mr-2" />
@@ -248,10 +268,11 @@ export default function BookingsPage() {
                             </div>
 
                             <div className="border-t border-gray-50 pt-4">
-                                <CallConversations 
+                               {/* <CallConversations 
                                     callSessions={booking.client?.callSessions || []} 
                                     clientName={booking.client?.name || 'Unknown Client'}
                                 />
+                                */}
                             </div>
                         </div>
                     ))}
