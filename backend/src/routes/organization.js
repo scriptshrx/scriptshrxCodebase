@@ -705,6 +705,7 @@ router.patch('/info',
 
             // New JSON Configs
             if (aiConfig !== undefined) {
+                console.log('[Organization API] Processing aiConfig');
                 // Fetch current config to merge (Read-Modify-Write) prevents overwriting FAQs when saving Voice settings
                 const currentTenantAI = await prisma.tenant.findUnique({
                     where: { id: tenantId },
@@ -720,28 +721,36 @@ router.patch('/info',
 
                 // VALIDATION: Prevent empty saves
                 if (!mergedAiConfig.aiName || !mergedAiConfig.aiName.trim()) {
+                    console.log('[Organization API] Validation failed: AI Name is required');
                     return res.status(400).json({ success: false, error: 'AI Name is required' });
                 }
                 if (!mergedAiConfig.welcomeMessage || !mergedAiConfig.welcomeMessage.trim()) {
+                    console.log('[Organization API] Validation failed: Welcome Message is required');
                     return res.status(400).json({ success: false, error: 'Welcome Message is required' });
                 }
                 if (!mergedAiConfig.systemPrompt || !mergedAiConfig.systemPrompt.trim()) {
+                    console.log('[Organization API] Validation failed: System Prompt is required');
                     return res.status(400).json({ success: false, error: 'System Instructions are required' });
                 }
 
-                // FAQ Validation
-                if (mergedAiConfig.faqs && Array.isArray(mergedAiConfig.faqs)) {
-                    for (const faq of mergedAiConfig.faqs) {
+                // FAQ Validation - only validate if FAQs array exists and has items
+                if (mergedAiConfig.faqs && Array.isArray(mergedAiConfig.faqs) && mergedAiConfig.faqs.length > 0) {
+                    console.log('[Organization API] Validating FAQs, count:', mergedAiConfig.faqs.length);
+                    for (let i = 0; i < mergedAiConfig.faqs.length; i++) {
+                        const faq = mergedAiConfig.faqs[i];
                         if (!faq.question || !faq.question.trim() || !faq.answer || !faq.answer.trim()) {
-                            return res.status(400).json({ success: false, error: 'All Q&A pairs must have both a question and an answer.' });
+                            console.log(`[Organization API] FAQ #${i + 1} validation failed`);
+                            return res.status(400).json({ success: false, error: `Q&A pair #${i + 1}: Both question and answer are required.` });
                         }
                     }
                 }
 
+                console.log('[Organization API] aiConfig validation passed, setting updateData.aiConfig');
                 updateData.aiConfig = mergedAiConfig;
             }
 
             if (twilioConfig !== undefined) {
+                console.log('[Organization API] Processing twilioConfig');
                 // Fetch current config to merge (Read-Modify-Write for JSON)
                 const currentTenant = await prisma.tenant.findUnique({
                     where: { id: tenantId },
@@ -755,12 +764,14 @@ router.patch('/info',
                     const cleanedPhone = twilioConfig.phoneNumber.replace(/[^\d+]/g, '');
 
                     if (!cleanedPhone.trim()) {
+                        console.log('[Organization API] Twilio validation failed: Phone is empty');
                         return res.status(400).json({ success: false, error: 'Twilio Phone Number cannot be empty' });
                     }
 
                     // Basic E.164 validation on CLEANED number
                     const phoneRegex = /^\+?[1-9]\d{1,14}$/;
                     if (!phoneRegex.test(cleanedPhone)) {
+                        console.log('[Organization API] Twilio validation failed: Invalid format', cleanedPhone);
                         return res.status(400).json({ success: false, error: `Invalid Phone Number format. Got: '${cleanedPhone}'. Expected E.164 (e.g. +18667243198)` });
                     }
 
@@ -779,6 +790,7 @@ router.patch('/info',
                     });
 
                     if (existingPhoneNumber) {
+                        console.log('[Organization API] Phone duplicate detected:', cleanedPhone);
                         return res.status(409).json({
                             success: false,
                             error: `This phone number (${cleanedPhone}) is already registered with another company. Each company must use a unique phone number.`
@@ -810,13 +822,14 @@ router.patch('/info',
             console.log('[Organization API] Updated customSystemPrompt:', tenant.customSystemPrompt ? `${tenant.customSystemPrompt.substring(0, 50)}...` : 'NULL');
             console.log('[Organization API] Updated aiConfig:', tenant.aiConfig);
 
-            res.json({
+            return res.json({
                 success: true,
                 organization: tenant,
                 message: 'Organization updated successfully'
             });
         } catch (error) {
             console.error('Error updating organization:', error);
+            console.error('Error stack:', error.stack);
             
             // Handle Prisma unique constraint violation
             if (error.code === 'P2002') {
@@ -826,9 +839,9 @@ router.patch('/info',
                 });
             }
             
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
-                error: 'Failed to update organization'
+                error: error.message || 'Failed to update organization'
             });
         }
     }

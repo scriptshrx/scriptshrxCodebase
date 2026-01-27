@@ -6,9 +6,7 @@ import { Bot, Save, Sparkles, MessageSquare, Plus, Trash2, HelpCircle, Book, Set
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
-const API_URL = typeof window !== 'undefined' && process.env.NODE_ENV === 'development'
-    ? 'http://localhost:5000'
-    : (typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'));
+const API_URL = 'https://scriptshrxcodebase.onrender.com';
 
 interface FAQ {
     question: string;
@@ -77,26 +75,67 @@ export default function ChatPage() {
     };
 
     const handleSaveConfig = async () => {
+        // Validate required fields first
+        if (!aiConfig.aiName.trim()) {
+            alert('AI Name is required');
+            return;
+        }
+        if (!aiConfig.welcomeMessage.trim()) {
+            alert('Welcome Message is required');
+            return;
+        }
+        if (!aiConfig.customSystemPrompt.trim()) {
+            alert('System Instructions are required');
+            return;
+        }
+
+        // Validate all FAQs have both question and answer
+        if (aiConfig.faqs && aiConfig.faqs.length > 0) {
+            for (let i = 0; i < aiConfig.faqs.length; i++) {
+                const faq = aiConfig.faqs[i];
+                if (!faq.question.trim() || !faq.answer.trim()) {
+                    alert(`Q&A pair #${i + 1} is incomplete. Both question and answer are required.`);
+                    return;
+                }
+            }
+        }
+
         setIsSaving(true);
         try {
+            const requestBody = {
+                aiName: aiConfig.aiName,
+                aiWelcomeMessage: aiConfig.welcomeMessage,
+                customSystemPrompt: aiConfig.customSystemPrompt,
+                aiConfig: {
+                    aiName: aiConfig.aiName,
+                    welcomeMessage: aiConfig.welcomeMessage,
+                    systemPrompt: aiConfig.customSystemPrompt,
+                    model: aiConfig.model,
+                    faqs: aiConfig.faqs || []
+                }
+            };
+
+            console.log('Sending request body:', requestBody);
+
             const res = await fetch(`${API_URL}/api/organization/info`, {
                 method: 'PATCH',
                 headers: getHeaders(),
-                body: JSON.stringify({
-                    aiName: aiConfig.aiName, // Legacy
-                    aiWelcomeMessage: aiConfig.welcomeMessage, // Legacy
-                    customSystemPrompt: aiConfig.customSystemPrompt, // Legacy
-                    aiConfig: {
-                        aiName: aiConfig.aiName,
-                        welcomeMessage: aiConfig.welcomeMessage,
-                        systemPrompt: aiConfig.customSystemPrompt,
-                        model: aiConfig.model,
-                        faqs: aiConfig.faqs
-                    }
-                })
+                body: JSON.stringify(requestBody)
             });
 
+            // Check if response has content before parsing JSON
+            const contentType = res.headers.get('content-type');
+            const isJson = contentType && contentType.includes('application/json');
+            
+            if (!isJson) {
+                const text = await res.text();
+                console.error('Response text:', text);
+                throw new Error(`Server returned ${res.status} with non-JSON response: ${text.substring(0, 100)}`);
+            }
+
             const data = await res.json();
+            console.log('Response data:', data);
+            
             if (res.ok) {
                 alert('Chat Agent configuration saved successfully!');
             } else {
