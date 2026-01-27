@@ -40,8 +40,9 @@ export default function BookingsPage() {
 
     const fetchBookings = async () => {
         try {
+            console.log('[Bookings] Fetching bookings...');
             const response = await api.get('/api/bookings');
-            console.log(`[Frontend] ✅ Received ${response.data.bookings?.length || 0} bookings`);
+            console.log(`[Bookings] ✅ Received ${response.data.bookings?.length || 0} bookings`);
             setBookings(response.data.bookings || []);
         } catch (error: any) {
             if (error.response?.data?.code === 'TOKEN_EXPIRED') {
@@ -56,21 +57,32 @@ export default function BookingsPage() {
 
     const fetchClients = async () => {
         try {
+            console.log('[Bookings] Fetching clients...');
             const response = await api.get('/api/clients');
+            console.log(`[Bookings] ✅ Received ${response.data.clients?.length || 0} clients`);
             setClients(response.data.clients || []);
         } catch (error: any) {
             if (error.response?.data?.code === 'TOKEN_EXPIRED') {
                 localStorage.removeItem('token');
                 window.location.href = '/login';
             } else {
-                console.error('Error fetching clients:', error.message);
+                console.error('[Bookings] Error fetching clients:', error.message);
             }
         }
     };
 
     useEffect(() => {
-        fetchBookings();
-        fetchClients();
+        console.log('[Bookings] Page mounted - fetching data...');
+        const token = localStorage.getItem('token');
+        console.log(`[Bookings] Token in localStorage: ${token ? '✅ YES' : '❌ NO'}`);
+        
+        if (token) {
+            fetchBookings();
+            fetchClients();
+        } else {
+            console.warn('[Bookings] ⚠️ No token found - cannot fetch data');
+        }
+        
         const interval = setInterval(fetchBookings, 10000);
         return () => clearInterval(interval);
     }, []);
