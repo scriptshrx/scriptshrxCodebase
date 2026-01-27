@@ -33,13 +33,10 @@ api.interceptors.response.use(
             originalRequest._retry = true;
 
             try {
-                // Attempt Refresh
-                const refreshBase = typeof window !== 'undefined' && process.env.NODE_ENV === 'development'
-                    ? 'http://localhost:5000'
-                    : '';
-                const refreshUrl = typeof window !== 'undefined' && process.env.NODE_ENV !== 'development'
-                    ? '/api/auth/refresh'
-                    : `${refreshBase}/api/auth/refresh`;
+                // Attempt Refresh with absolute URL
+                const baseUrl = getBaseUrl();
+                const refreshUrl = `${baseUrl}/api/auth/refresh`;
+                
                 const { data } = await axios.post(refreshUrl, {}, {
                     withCredentials: true
                 });

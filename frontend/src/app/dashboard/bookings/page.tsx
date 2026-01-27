@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Calendar as CalendarIcon, Clock, Trash2, Edit2, Check, AlertCircle, X, Search, Video, ExternalLink } from 'lucide-react';
 import EmptyState from '@/components/EmptyState';
 import CallConversations from '@/components/CallConversations';
+import api from '@/lib/api';
 
 function Toast({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) {
     useEffect(() => {
@@ -39,51 +40,31 @@ export default function BookingsPage() {
 
     const fetchBookings = async () => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                console.error('❌ No token found in localStorage');
-                return;
-            }
-            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/bookings', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            console.log(`[Frontend] Bookings API Response: ${res.status} ${res.statusText}`);
-            
-            if (res.ok) {
-                const contentType = res.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    const data = await res.json();
-                    console.log(`[Frontend] ✅ Received ${data.bookings?.length || 0} bookings`);
-                    setBookings(data.bookings || []);
-                } else {
-                    console.error('❌ Received non-JSON response from API');
-                }
+            const response = await api.get('/api/bookings');
+            console.log(`[Frontend] ✅ Received ${response.data.bookings?.length || 0} bookings`);
+            setBookings(response.data.bookings || []);
+        } catch (error: any) {
+            if (error.response?.data?.code === 'TOKEN_EXPIRED') {
+                console.error('❌ Token expired - please log in again');
+                localStorage.removeItem('token');
+                window.location.href = '/login';
             } else {
-                const errorText = await res.text();
-                console.error(`❌ Bookings API failed with ${res.status}:`, errorText);
+                console.error('❌ Error fetching bookings:', error.message);
             }
-        } catch (error) {
-            console.error('❌ Error fetching bookings:', error);
         }
     };
 
     const fetchClients = async () => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) return;
-            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/clients', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const contentType = res.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    const data = await res.json();
-                    setClients(data.clients || []);
-                }
+            const response = await api.get('/api/clients');
+            setClients(response.data.clients || []);
+        } catch (error: any) {
+            if (error.response?.data?.code === 'TOKEN_EXPIRED') {
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+            } else {
+                console.error('Error fetching clients:', error.message);
             }
-        } catch (error) {
-            console.error('Error fetching clients:', error);
         }
     };
 
@@ -100,55 +81,42 @@ export default function BookingsPage() {
         }
 
         try {
-            const token = localStorage.getItem('token');
             const dateTime = new Date(`${newBooking.date}T${newBooking.time}`);
 
-            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/bookings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    clientId: newBooking.clientId,
-                    date: dateTime.toISOString(),
-                    purpose: newBooking.purpose,
-                    meetingLink: newBooking.meetingLink || undefined
-                })
+            await api.post('/api/bookings', {
+                clientId: newBooking.clientId,
+                date: dateTime.toISOString(),
+                purpose: newBooking.purpose,
+                meetingLink: newBooking.meetingLink || undefined
             });
 
-            if (res.ok) {
-                setShowAddModal(false);
-                setNewBooking({ clientId: '', date: '', time: '', purpose: '', meetingLink: '' });
-                fetchBookings();
-                showToast('Booking created successfully!', 'success');
+            setShowAddModal(false);
+            setNewBooking({ clientId: '', date: '', time: '', purpose: '', meetingLink: '' });
+            fetchBookings();
+            showToast('Booking created successfully!', 'success');
+        } catch (error: any) {
+            if (error.response?.data?.code === 'TOKEN_EXPIRED') {
+                localStorage.removeItem('token');
+                window.location.href = '/login';
             } else {
-                const errorData = await res.json();
-                showToast(errorData.error || 'Failed to create booking.', 'error');
+                showToast(error.response?.data?.error || 'Failed to create booking.', 'error');
             }
-        } catch (error) {
-            console.error('Error adding booking:', error);
-            showToast('Network error occurred.', 'error');
         }
     };
 
     const handleDeleteBooking = async (id: string) => {
         if (!confirm('Are you sure you want to delete this booking?')) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/bookings/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                fetchBookings();
-                showToast('Booking deleted successfully.', 'success');
+            await api.delete(`/api/bookings/${id}`);
+            fetchBookings();
+            showToast('Booking deleted successfully.', 'success');
+        } catch (error: any) {
+            if (error.response?.data?.code === 'TOKEN_EXPIRED') {
+                localStorage.removeItem('token');
+                window.location.href = '/login';
             } else {
                 showToast('Failed to delete booking.', 'error');
             }
-        } catch (error) {
-            console.error('Error deleting booking:', error);
-            showToast('Network error occurred.', 'error');
         }
     };
 
@@ -168,35 +136,26 @@ export default function BookingsPage() {
     const handleUpdateBooking = async () => {
         if (!editBooking) return;
         try {
-            const token = localStorage.getItem('token');
             const dateTime = new Date(`${editForm.date}T${editForm.time}`);
 
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/bookings/${editBooking.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    date: dateTime.toISOString(),
-                    purpose: editForm.purpose,
-                    status: editForm.status,
-                    meetingLink: editForm.meetingLink || undefined
-                })
+            await api.patch(`/api/bookings/${editBooking.id}`, {
+                date: dateTime.toISOString(),
+                purpose: editForm.purpose,
+                status: editForm.status,
+                meetingLink: editForm.meetingLink || undefined
             });
 
-            if (res.ok) {
-                setShowEditModal(false);
-                setEditBooking(null);
-                fetchBookings();
-                showToast('Booking updated successfully!', 'success');
+            setShowEditModal(false);
+            setEditBooking(null);
+            fetchBookings();
+            showToast('Booking updated successfully!', 'success');
+        } catch (error: any) {
+            if (error.response?.data?.code === 'TOKEN_EXPIRED') {
+                localStorage.removeItem('token');
+                window.location.href = '/login';
             } else {
-                const errorData = await res.json();
-                showToast(errorData.error || 'Failed to update booking.', 'error');
+                showToast(error.response?.data?.error || 'Failed to update booking.', 'error');
             }
-        } catch (error) {
-            console.error('Error updating booking:', error);
-            showToast('Network error occurred.', 'error');
         }
     };
 
