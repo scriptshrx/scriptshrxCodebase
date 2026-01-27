@@ -6,8 +6,12 @@ const authMiddleware = require('../lib/authMiddleware');
 // Get all notifications for user
 router.get('/', authMiddleware, async (req, res) => {
     try {
+        console.log('[Notifications API] GET /notifications');
+        console.log(`  Origin: ${req.headers.origin}`);
+        console.log(`  User ID: ${req.user?.userId}`);
+        
         const notifications = await prisma.notification.findMany({
-            where: { userId: req.user.id },
+            where: { userId: req.user?.userId || req.user?.id },
             orderBy: { createdAt: 'desc' },
             take: 20
         });
@@ -22,7 +26,7 @@ router.get('/', authMiddleware, async (req, res) => {
 router.put('/read-all', authMiddleware, async (req, res) => {
     try {
         await prisma.notification.updateMany({
-            where: { userId: req.user.id, isRead: false },
+            where: { userId: req.user?.userId || req.user?.id, isRead: false },
             data: { isRead: true }
         });
         res.json({ message: 'All notifications marked as read' });

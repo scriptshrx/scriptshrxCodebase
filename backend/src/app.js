@@ -75,9 +75,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Explicitly handle preflight OPTIONS requests
-app.options('*', cors(corsOptions));
-
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use(express.json({
