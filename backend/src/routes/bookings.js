@@ -31,7 +31,7 @@ router.get('/',
 
             console.log(`\x1b[1m[Bookings API] GET /api/bookings\x1b[0m`);
             console.log(`  📊 TenantId: ${tenantId}`);
-            console.log(`  👤 UserId: ${req.user?.id || req.user?.sub}`);
+            console.log(`  👤 UserId: ${req.user?.userId}`);
             console.log(`  🔍 Filters: status=${status}, clientId=${clientId}, from=${from}, to=${to}`);
 
             const whereClause = { tenantId };
@@ -112,7 +112,7 @@ router.post('/',
         try {
             console.log(`\x1b[1m[Bookings API] POST /api/bookings\x1b[0m`);
             console.log(`  📝 Creating new booking`);
-            console.log(`  UserId: ${req.user?.id || req.user?.sub}`);
+            console.log(`  UserId: ${req.user?.userId}`);
             console.log(`  TenantId: ${tenantId}`);
             console.log(`  Request body:`, JSON.stringify(req.body, null, 2));
             
@@ -120,7 +120,7 @@ router.post('/',
 
             if (!tenantId) {
                 console.error('[Bookings] Missing tenantId in request context', {
-                    userId: req.user?.id,
+                    userId: req.user?.userId,
                     scopedTenantId: req.scopedTenantId,
                     userTenantId: req.user?.tenantId,
                     bodyTenantId: req.body.tenantId
@@ -295,7 +295,7 @@ router.patch('/:id',
         try {
             console.log(`\x1b[1m[Bookings API] PATCH /api/bookings/:id\x1b[0m`);
             console.log(`  ✏️ Updating booking`);
-            console.log(`  UserId: ${req.user?.id || req.user?.sub}`);
+            console.log(`  UserId: ${req.user?.userId}`);
             console.log(`  Booking ID: ${req.params.id}`);
             console.log(`  Update data:`, JSON.stringify(req.body, null, 2));
             
@@ -367,7 +367,7 @@ router.delete('/:id',
         try {
             console.log(`\x1b[1m[Bookings API] DELETE /api/bookings/:id\x1b[0m`);
             console.log(`  🗑️ Deleting booking`);
-            console.log(`  UserId: ${req.user?.id || req.user?.sub}`);
+            console.log(`  UserId: ${req.user?.userId}`);
             console.log(`  Booking ID: ${req.params.id}`);
             
             const tenantId = req.scopedTenantId;

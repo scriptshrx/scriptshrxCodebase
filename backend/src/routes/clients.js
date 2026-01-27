@@ -19,7 +19,7 @@ router.get('/',
         try {
             console.log(`\x1b[1m[Clients API] GET /api/clients\x1b[0m`);
             console.log(`  📋 Fetching clients`);
-            console.log(`  UserId: ${req.user?.id || req.user?.sub}`);
+            console.log(`  UserId: ${req.user?.userId}`);
             console.log(`  TenantId: ${req.scopedTenantId}`);
             console.log(`  Search query: ${req.query.search || 'none'}`);
             
@@ -94,7 +94,7 @@ router.post('/',
 
             if (!tenantId) {
                 console.error('[Clients] Missing tenantId in request context', {
-                    userId: req.user?.id,
+                    userId: req.user?.userId,
                     scopedTenantId: req.scopedTenantId,
                     userTenantId: req.user?.tenantId,
                     bodyTenantId: req.body.tenantId
