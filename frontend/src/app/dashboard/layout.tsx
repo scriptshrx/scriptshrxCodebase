@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import useTokenExpiration from '@/hooks/useTokenExpiration';
 import {
     LayoutDashboard, Users, Calendar, Settings, Phone, MessageSquare, Search,
     Bell, Menu, FileText, LogOut, User, Zap, PieChart, X, ChevronRight
@@ -29,6 +30,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const sidebarRef = useRef<HTMLElement>(null);
+
+    // Monitor token expiration and auto-logout
+    useTokenExpiration();
 
     // Fetch user
     useEffect(() => {
