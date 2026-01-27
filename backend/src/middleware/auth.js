@@ -28,7 +28,7 @@ const authenticateToken = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
     console.log(`  ✅ Token verified successfully`);
-    console.log(`  Decoded user ID: ${decoded.id || decoded.sub}`);
+    console.log(`  Decoded user ID: ${decoded.userId}`);
     console.log(`  Decoded tenant ID: ${decoded.tenantId}`);
     console.log(`  Decoded role: ${decoded.role}`);
 
@@ -39,7 +39,7 @@ const authenticateToken = (req, res, next) => {
 
     // Propagate context (ALS)
     const store = {
-      userId: decoded.id || decoded.sub,
+      userId: decoded.userId,
       tenantId: decoded.tenantId,
       role: decoded.role
     };
