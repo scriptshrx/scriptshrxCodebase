@@ -19,6 +19,7 @@ router.get('/',
         try {
             console.log(`\x1b[1m[Clients API] GET /api/clients\x1b[0m`);
             console.log(`  📋 Fetching clients`);
+            console.log(`  UserId: ${req.user?.id || req.user?.sub}`);
             console.log(`  TenantId: ${req.scopedTenantId}`);
             console.log(`  Search query: ${req.query.search || 'none'}`);
             

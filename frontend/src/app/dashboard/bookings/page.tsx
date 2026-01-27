@@ -40,21 +40,31 @@ export default function BookingsPage() {
     const fetchBookings = async () => {
         try {
             const token = localStorage.getItem('token');
-            if (!token) return;
+            if (!token) {
+                console.error('❌ No token found in localStorage');
+                return;
+            }
             const res = await fetch('https://scriptshrxcodebase.onrender.com/api/bookings', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            
+            console.log(`[Frontend] Bookings API Response: ${res.status} ${res.statusText}`);
+            
             if (res.ok) {
                 const contentType = res.headers.get("content-type");
                 if (contentType && contentType.includes("application/json")) {
                     const data = await res.json();
+                    console.log(`[Frontend] ✅ Received ${data.bookings?.length || 0} bookings`);
                     setBookings(data.bookings || []);
                 } else {
-                    console.error('Received non-JSON response from API');
+                    console.error('❌ Received non-JSON response from API');
                 }
+            } else {
+                const errorText = await res.text();
+                console.error(`❌ Bookings API failed with ${res.status}:`, errorText);
             }
         } catch (error) {
-            console.error('Error fetching bookings:', error);
+            console.error('❌ Error fetching bookings:', error);
         }
     };
 
