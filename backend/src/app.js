@@ -55,11 +55,15 @@ const corsOptions = {
             process.env.FRONTEND_URL
         ].filter(Boolean);
 
+        console.log(`[CORS] Checking origin: ${origin}`);
+        console.log(`[CORS] Allowed origins: ${allowedOrigins.join(', ')}`);
+
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin || allowedOrigins.includes(origin) || origin?.includes('onrender.com')) {
+            console.log(`[CORS] ✅ ALLOWED: ${origin}`);
             callback(null, true);
         } else {
-            console.warn(`[CORS] Blocked origin: ${origin}`);
+            console.warn(`[CORS] ❌ BLOCKED: ${origin}`);
             callback(new Error('CORS not allowed'));
         }
     },
@@ -70,6 +74,10 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// Explicitly handle preflight OPTIONS requests
+app.options('*', cors(corsOptions));
+
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use(express.json({
