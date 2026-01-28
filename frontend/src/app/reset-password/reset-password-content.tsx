@@ -52,7 +52,7 @@ export default function ResetPasswordContent() {
 
     const validateToken = async () => {
         try {
-            const response = await fetch(`/api/auth/verify-reset-token/${token}`);
+            const response = await fetch(`https://scriptshrxcodebase.onrender.com/api/auth/verify-reset-token/${token}`);
             const data = await response.json();
 
             if (data.success && data.valid) {
@@ -94,7 +94,7 @@ export default function ResetPasswordContent() {
         setLoading(true);
 
         try {
-            const response = await fetch('/api/auth/reset-password', {
+            const response = await fetch('https://scriptshrxcodebase.onrender.com/api/auth/reset-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
