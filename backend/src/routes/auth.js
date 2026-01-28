@@ -553,50 +553,50 @@ router.post('/forgot-password', async (req, res) => {
 
         // Build reset link
         const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://scriptishrx.net';
-        const resetLink = `${frontendUrl}/reset-password/${resetToken}`;
+        const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
 
-        // Send email with reset link
-        try {
-            const resetMailTemplate = fs.readFileSync(
-                path.join(process.cwd(), 'src', 'routes', 'resetPasswordMail.html'),
-                'utf8'
-            );
+        // Send email ASYNCHRONOUSLY so we don't block the response
+        // This prevents timeout issues with the database connection
+        (async () => {
+            try {
+                const resetMailTemplate = fs.readFileSync(
+                    path.join(process.cwd(), 'src', 'routes', 'resetPasswordMail.html'),
+                    'utf8'
+                );
 
-            let resetMail = resetMailTemplate
-                .replace('name', user.name || user.email)
-                .replace(/resetLink/g, resetLink);
+                let resetMail = resetMailTemplate
+                    .replace('name', user.name || user.email)
+                    .replace(/resetLink/g, resetLink);
 
-            const response = await client.sendMail({
-                from: {
-                    address: 'support@scriptishrx.net',
-                    name: 'ScriptishRx'
-                },
-                to: [
-                    {
-                        email_address: {
-                            address: email,
-                            name: user.name || email
+                const response = await client.sendMail({
+                    from: {
+                        address: 'support@scriptishrx.net',
+                        name: 'ScriptishRx'
+                    },
+                    to: [
+                        {
+                            email_address: {
+                                address: email,
+                                name: user.name || email
+                            }
                         }
-                    }
-                ],
-                bcc: [{ email_address: { address: 'support@scriptishrx.net' } }],
-                subject: 'Password Reset Request - ScriptishRx',
-                htmlbody: resetMail
-            });
+                    ],
+                    bcc: [{ email_address: { address: 'support@scriptishrx.net' } }],
+                    subject: 'Password Reset Request - ScriptishRx',
+                    htmlbody: resetMail
+                });
 
-            console.log('Password reset email sent successfully to:', email);
-            return res.status(200).json({
-                success: true,
-                message: 'If an account exists with this email, a password reset link has been sent'
-            });
-        } catch (emailError) {
-            console.error('Failed to send password reset email:', emailError.message);
-            // Still return success for security
-            return res.status(200).json({
-                success: true,
-                message: 'If an account exists with this email, a password reset link has been sent'
-            });
-        }
+                console.log('Password reset email sent successfully to:', email);
+            } catch (emailError) {
+                console.error('Failed to send password reset email:', emailError.message);
+            }
+        })();
+
+        // Return success immediately - email will be sent in background
+        return res.status(200).json({
+            success: true,
+            message: 'If an account exists with this email, a password reset link has been sent'
+        });
     } catch (error) {
         console.error('Forgot password error:', error);
         res.status(500).json({
