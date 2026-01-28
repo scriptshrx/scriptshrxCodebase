@@ -572,7 +572,7 @@ export default function VoicePage() {
                                         className="w-full h-11 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold"
                                         disabled={isCalling || !phoneNumber}
                                     >
-                                        {isCalling ? <><Activity className="w-4 h-4 animate-spin mr-2" /> Calling...</> : 'Call Me'}
+                                        {isCalling ? <><Activity className="w-4 h-4 animate-spin mr-2" /> Calling...</> : 'Call Client'}
                                     </Button>
                                     {callStatus === 'success' && (
                                         <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm text-center border border-green-100">
