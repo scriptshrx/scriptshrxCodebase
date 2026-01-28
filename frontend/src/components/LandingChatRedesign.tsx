@@ -208,7 +208,7 @@ export default function LandingChatRedesign({ onClose }: { onClose?: () => void 
                             className="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 cursor-pointer hover:scale-[1.02] transition-transform active:scale-95 group mb-4 mt-2"
                         >
                             <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                                <div className="w-10 h-[40px] rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
                                     <MessageSquare className="w-5 h-5 text-blue-600" />
                                 </div>
                                 <div className="flex-1 min-w-0">
