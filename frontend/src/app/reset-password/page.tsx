@@ -1,20 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, AlertCircle, Loader2, Check, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-
-// Generate static params for static export (required for dynamic routes)
-export async function generateStaticParams() {
-    // Return empty array since token params are dynamic/unknown at build time
-    // Page will be rendered on-demand (ISR)
-    return [];
-}
 
 export default function ResetPasswordPage() {
     const router = useRouter();
-    const params = useParams();
-    const token = params?.token as string;
+    const searchParams = useSearchParams();
+    const token = searchParams.get('token');
 
     const [validating, setValidating] = useState(true);
     const [tokenValid, setTokenValid] = useState(false);
@@ -30,6 +23,12 @@ export default function ResetPasswordPage() {
 
     // Validate token on mount
     useEffect(() => {
+        if (!token) {
+            setError('No reset token provided');
+            setValidating(false);
+            setTokenValid(false);
+            return;
+        }
         validateToken();
     }, [token]);
 

@@ -139,10 +139,12 @@ Beautiful HTML email template that:
 5. Auto-redirects to login
 
 ### 2. Reset Password Page
-**File:** `/frontend/src/app/reset-password/[token]/page.tsx`
+**File:** `/frontend/src/app/reset-password/page.tsx`
+
+**Route:** `/reset-password?token={token}`
 
 **Features:**
-- Dynamic route with token parameter
+- Query parameter based route (compatible with static export)
 - Token validation on page load
 - Invalid/expired token handling
 - Password strength indicator (0-4 bars)

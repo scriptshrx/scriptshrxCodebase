@@ -216,6 +216,11 @@ export default function ForgotPasswordPage() {
                                         Try Again
                                     </button>
                                 </p>
+
+                                {/* Copy Token Instruction */}
+                                <p className="text-gray-500 text-xs mt-8 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                    💡 <span className="font-semibold">Tip:</span> If you don't see the button in the email, copy the full link and paste it in your browser address bar.
+                                </p>
                             </div>
                         </>
                     )}
