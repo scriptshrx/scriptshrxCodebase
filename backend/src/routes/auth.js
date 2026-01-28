@@ -552,7 +552,7 @@ router.post('/forgot-password', async (req, res) => {
         });
 
         // Build reset link
-        const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://scriptishrx.net';
+        const frontendUrl = 'https://scriptishrx.net';
         const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
 
         // Send email ASYNCHRONOUSLY so we don't block the response
