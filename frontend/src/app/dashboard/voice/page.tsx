@@ -552,8 +552,8 @@ export default function VoicePage() {
                                     <PhoneOutgoing className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-gray-900">Live Agent Preview</h2>
-                                    <p className="text-gray-500 text-xs mt-0.5">Receive a call to verify your AI configuration.</p>
+                                    <h2 className="text-lg font-bold text-gray-900">Outbound Call Settings</h2>
+                                    <p className="text-gray-500 text-xs mt-0.5">Configure outbound call number.</p>
                                 </div>
                             </div>
                             <div className="p-6 space-y-5">
