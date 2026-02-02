@@ -247,9 +247,9 @@ export default function DashboardPage() {
                             title={isVideoPlaying ? "Pause" : "Play"}
                         >
                             {isVideoPlaying ? (
-                                <Pause className="w-5 h-5 text-slate-900 fill-slate-900" />
+                                <Pause className="w-5 h-5 cursor-pointer text-slate-900 fill-slate-900" />
                             ) : (
-                                <Play className="w-5 h-5 text-slate-900 fill-slate-900" />
+                                <Play className="w-5 h-5 text-slate-900 cursor-pointer fill-slate-900" />
                             )}
                         </button>
 
