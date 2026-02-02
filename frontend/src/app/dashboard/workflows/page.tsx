@@ -21,11 +21,14 @@ export default function WorkflowsPage() {
     // Feedback State
     const [successModal, setSuccessModal] = useState<{ show: boolean, message: string }>({ show: false, message: '' });
 
+    // Use provided NEXT_PUBLIC_API_BASE if available, otherwise use Render URL
+    const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || 'https://scriptshrxcodebase.onrender.com';
+
     useEffect(() => {
         // Fetch workflows
         const fetchWorkflows = async () => {
             try {
-                const res = await fetch('/api/workflows', {
+                const res = await fetch(`${API_BASE}/api/workflows`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const data = await res.json();
@@ -44,7 +47,7 @@ export default function WorkflowsPage() {
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this workflow?')) return;
         try {
-            const res = await fetch(`/api/workflows/${id}`, {
+            const res = await fetch(`${API_BASE}/api/workflows/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -69,7 +72,7 @@ export default function WorkflowsPage() {
         };
 
         try {
-            const res = await fetch('/api/workflows', {
+            const res = await fetch(`${API_BASE}/api/workflows`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
