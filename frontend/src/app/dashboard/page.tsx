@@ -214,7 +214,7 @@ export default function DashboardPage() {
                         muted={isVideoMuted}
                         loop
                         playsInline
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                         onPlay={() => setIsVideoPlaying(true)}
                         onPause={() => setIsVideoPlaying(false)}
                     >
