@@ -198,7 +198,44 @@ export default function DashboardPage() {
                 </div>
             </motion.div>
 
+            {/* --- PROMOTIONAL VIDEO SECTION --- */}
+            <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-3xl border border-white/50 shadow-2xl shadow-slate-200/50 bg-white/70 backdrop-blur-xl">
+                {/* Gradient Overlay Background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                
+                {/* Video Container with Aspect Ratio */}
+                <div className="relative w-full aspect-video overflow-hidden bg-slate-900">
+                    <video
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="w-full h-full object-cover"
+                    >
+                        <source
+                            src="https://res.cloudinary.com/dadvxxgl1/video/upload/v1769997501/adforScriptihrx_lvyn7l.mp4"
+                            type="video/mp4"
+                        />
+                        Your browser does not support the video tag.
+                    </video>
+                    
+                    {/* Subtle Vignette Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent pointer-events-none" />
+                </div>
 
+                {/* Info Bar Below Video */}
+                <div className="relative p-6 md:p-8 flex items-center justify-between border-t border-white/30">
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-900">ScriptishRx in Action</h3>
+                        <p className="text-sm text-slate-500 mt-1">Discover how our AI-powered platform transforms your workflow</p>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-violet-500 text-white rounded-xl font-semibold text-sm">
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
+                            ▶
+                        </motion.div>
+                    </div>
+                </div>
+            </motion.div>
 
             {/* --- HERO STATS GRID --- */}
             <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
