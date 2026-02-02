@@ -207,7 +207,7 @@ export default function DashboardPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                 
                 {/* Video Container with Aspect Ratio */}
-                <div className="relative w-full aspect-video overflow-hidden bg-slate-900">
+                <div className="relative w-full aspect-video overflow-hidden bg-gray-200">
                     <video
                         ref={setVideoRef}
                         autoPlay
