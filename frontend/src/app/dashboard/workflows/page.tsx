@@ -34,6 +34,8 @@ export default function WorkflowsPage() {
                 const data = await res.json();
                 if (res.ok) {
                     setWorkflows(data.workflows || []);
+                } else {
+                    console.error('Failed to fetch workflows', { status: res.status, body: data });
                 }
             } catch (error) {
                 console.error("Failed to fetch workflows", error);
@@ -51,13 +53,17 @@ export default function WorkflowsPage() {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
-            if (res.ok) {
-                setWorkflows(prev => {
-                    const updated = prev.filter(w => w.id !== id);
-                    return updated;
-                });
-                setSuccessModal({ show: true, message: 'Workflow successfully deleted' });
-            }
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    setWorkflows(prev => {
+                        const updated = prev.filter(w => w.id !== id);
+                        return updated;
+                    });
+                    setSuccessModal({ show: true, message: 'Workflow successfully deleted' });
+                } else {
+                    console.error('Delete workflow failed', { status: res.status, body: data });
+                    alert(`${data?.error || 'Failed to delete workflow'}\n\nDetails: ${JSON.stringify(data)}`);
+                }
         } catch (error) {
             console.error('Failed to delete', error);
         }
@@ -84,8 +90,8 @@ export default function WorkflowsPage() {
                     actions: [action]
                 })
             });
+            const data = await res.json().catch(() => ({}));
 
-            const data = await res.json();
             if (res.ok) {
                 setWorkflows(prev => [data.workflow, ...prev]);
                 setShowCreate(false);
@@ -101,7 +107,10 @@ export default function WorkflowsPage() {
                     }
                 });
             } else {
-                alert(data.error || 'Failed to create workflow');
+                // Log full response for debugging permission/tenant issues
+                console.error('Create workflow failed', { status: res.status, body: data });
+                const friendly = data?.error || data?.message || 'Failed to create workflow';
+                alert(`${friendly}\n\nDetails: ${JSON.stringify(data)}`);
             }
         } catch (error) {
             console.error('Failed to create workflow', error);
