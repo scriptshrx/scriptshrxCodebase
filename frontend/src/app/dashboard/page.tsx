@@ -243,13 +243,13 @@ export default function DashboardPage() {
                                     }
                                 }
                             }}
-                            className="p-3 bg-white/80 hover:bg-white rounded-full backdrop-blur-md transition-all duration-200 shadow-lg hover:shadow-xl"
+                            className="p-3 bg-white/80 hover:bg-white cursor-pointer rounded-full backdrop-blur-md transition-all duration-200 shadow-lg hover:shadow-xl"
                             title={isVideoPlaying ? "Pause" : "Play"}
                         >
                             {isVideoPlaying ? (
-                                <Pause className="w-5 h-5 cursor-pointer text-slate-900 fill-slate-900" />
+                                <Pause className="w-5 h-5 text-slate-900 fill-slate-900" />
                             ) : (
-                                <Play className="w-5 h-5 text-slate-900 cursor-pointer fill-slate-900" />
+                                <Play className="w-5 h-5 text-slate-900 fill-slate-900" />
                             )}
                         </button>
 
