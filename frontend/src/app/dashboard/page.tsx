@@ -5,7 +5,7 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import {
     Users, DollarSign, Clock, Activity, RefreshCw, Calendar, Zap,
     ArrowUpRight, ArrowDownRight, Phone, Shield, Search, Bell, Menu,
-    Globe, Server, Cpu, Radio, ChevronRight, X, User
+    Globe, Server, Cpu, Radio, ChevronRight, X, User, Play, Pause, Volume2, VolumeX
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
@@ -48,6 +48,9 @@ export default function DashboardPage() {
     const [liveUsers, setLiveUsers] = useState(1); // Default to 1 (You)
     const [systemLoad, setSystemLoad] = useState(10); // Low load default
     const [greetingMessage, setGreetingMessage] = useState('');
+    const [isVideoPlaying, setIsVideoPlaying] = useState(true); // Video starts playing
+    const [isVideoMuted, setIsVideoMuted] = useState(true); // Video starts muted
+    const [videoRef, setVideoRef] = useState<HTMLVideoElement | null>(null);
 
     // Poll System Status
     useEffect(() => {
@@ -206,11 +209,14 @@ export default function DashboardPage() {
                 {/* Video Container with Aspect Ratio */}
                 <div className="relative w-full aspect-video overflow-hidden bg-slate-900">
                     <video
+                        ref={setVideoRef}
                         autoPlay
-                        muted
+                        muted={isVideoMuted}
                         loop
                         playsInline
                         className="w-full h-full object-cover"
+                        onPlay={() => setIsVideoPlaying(true)}
+                        onPause={() => setIsVideoPlaying(false)}
                     >
                         <source
                             src="https://res.cloudinary.com/dadvxxgl1/video/upload/v1769997501/adforScriptihrx_lvyn7l.mp4"
@@ -221,19 +227,56 @@ export default function DashboardPage() {
                     
                     {/* Subtle Vignette Effect */}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent pointer-events-none" />
+
+                    {/* Custom Video Controls */}
+                    <div className="absolute bottom-4 right-4 flex gap-3 z-10">
+                        {/* Play/Pause Button */}
+                        <button
+                            onClick={() => {
+                                if (videoRef) {
+                                    if (isVideoPlaying) {
+                                        videoRef.pause();
+                                        setIsVideoPlaying(false);
+                                    } else {
+                                        videoRef.play();
+                                        setIsVideoPlaying(true);
+                                    }
+                                }
+                            }}
+                            className="p-3 bg-white/80 hover:bg-white rounded-full backdrop-blur-md transition-all duration-200 shadow-lg hover:shadow-xl"
+                            title={isVideoPlaying ? "Pause" : "Play"}
+                        >
+                            {isVideoPlaying ? (
+                                <Pause className="w-5 h-5 text-slate-900 fill-slate-900" />
+                            ) : (
+                                <Play className="w-5 h-5 text-slate-900 fill-slate-900" />
+                            )}
+                        </button>
+
+                        {/* Mute/Unmute Button */}
+                        <button
+                            onClick={() => {
+                                if (videoRef) {
+                                    videoRef.muted = !isVideoMuted;
+                                    setIsVideoMuted(!isVideoMuted);
+                                }
+                            }}
+                            className="p-3 bg-white/80 hover:bg-white rounded-full backdrop-blur-md transition-all duration-200 shadow-lg hover:shadow-xl"
+                            title={isVideoMuted ? "Unmute" : "Mute"}
+                        >
+                            {isVideoMuted ? (
+                                <VolumeX className="w-5 h-5 text-slate-900" />
+                            ) : (
+                                <Volume2 className="w-5 h-5 text-slate-900" />
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Info Bar Below Video */}
-                <div className="relative p-6 md:p-8 flex items-center justify-between border-t border-white/30">
-                    <div>
-                        <h3 className="text-lg font-bold text-slate-900">ScriptishRx in Action</h3>
-                        <p className="text-sm text-slate-500 mt-1">Discover how our AI-powered platform transforms your workflow</p>
-                    </div>
-                    <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-violet-500 text-white rounded-xl font-semibold text-sm">
-                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
-                            ▶
-                        </motion.div>
-                    </div>
+                <div className="relative p-6 md:p-8 border-t border-white/30">
+                    <h3 className="text-lg font-bold text-slate-900">ScriptishRx in Action</h3>
+                    <p className="text-sm text-slate-500 mt-1">Discover how our AI-powered platform transforms your workflow</p>
                 </div>
             </motion.div>
 
