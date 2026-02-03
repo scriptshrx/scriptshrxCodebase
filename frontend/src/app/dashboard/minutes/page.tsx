@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react';
 import { Plus, FileText, Calendar, Pencil, Trash2, X, Loader2, Check, AlertCircle, Zap } from 'lucide-react';
 
+// API base: hardcoded to Render backend
+const API_BASE: string = 'https://scriptshrxcodebase.onrender.com';
+
+const buildUrl = (path: string) => {
+    if (!path) return API_BASE;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+};
+
 // Toast Component
 function Toast({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) {
     useEffect(() => {
@@ -48,7 +57,7 @@ export default function MinutesPage() {
     const fetchMinutes = async () => {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const res = await fetch('/api/minutes', {
+        const res = await fetch(buildUrl('/api/minutes'), {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -60,7 +69,7 @@ export default function MinutesPage() {
     const fetchClients = async () => {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const res = await fetch('/api/clients', {
+        const res = await fetch(buildUrl('/api/clients'), {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -74,7 +83,7 @@ export default function MinutesPage() {
         setLoading(true);
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch('/api/minutes', {
+            const res = await fetch(buildUrl('/api/minutes'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,7 +113,7 @@ export default function MinutesPage() {
         setLoading(true);
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`/api/minutes/${editingMinute.id}`, {
+            const res = await fetch(buildUrl(`/api/minutes/${editingMinute.id}`), {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -133,7 +142,7 @@ export default function MinutesPage() {
         if (!confirm('Are you sure you want to delete this minute?')) return;
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`/api/minutes/${id}`, {
+            const res = await fetch(buildUrl(`/api/minutes/${id}`), {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -203,7 +212,7 @@ export default function MinutesPage() {
                                         onClick={async () => {
                                             setLoading(true);
                                             try {
-                                                const res = await fetch('/api/chat/analyze', {
+                                                const res = await fetch(buildUrl('/api/chat/analyze'), {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                                                     body: JSON.stringify({ text: minute.content })
@@ -293,7 +302,7 @@ export default function MinutesPage() {
                                             if (!newMinute.content) return showToast('Enter some notes first.', 'error');
                                             setLoading(true);
                                             try {
-                                                const res = await fetch('/api/chat/refine', {
+                                                const res = await fetch(buildUrl('/api/chat/refine'), {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                                                     body: JSON.stringify({ text: newMinute.content })

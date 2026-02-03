@@ -93,10 +93,12 @@ router.post('/',
                 message: 'Workflow created successfully'
             });
         } catch (error) {
-            console.error('Error creating workflow:', error);
+            console.error('[Workflow Create] Error:', error.message, error.stack);
             res.status(500).json({
                 success: false,
-                error: 'Failed to create workflow'
+                error: 'Failed to create workflow',
+                details: error.message,
+                code: error.code
             });
         }
     }
