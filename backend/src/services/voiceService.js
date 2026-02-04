@@ -15,6 +15,17 @@ const prismaDefault = require('../lib/prisma');
 const prisma = prismaDefault.concurrent || prismaDefault;
 const socketService = require('./socketService');
 
+// Phone number helpers
+function normalizeDigits(num) {
+    if (!num) return null;
+    return String(num).replace(/\D/g, '');
+}
+
+function lastNDigits(num, n = 10) {
+    const d = normalizeDigits(num) || '';
+    return d.slice(-n);
+}
+
 // Twilio G711 μ-law = 20ms = 320 bytes
 const CHUNK_SIZE = 320;
 const SILENCE_BYTE = 0xff;
@@ -85,28 +96,31 @@ class VoiceService {
         const tenantPromise = (async () => {
             try {
                 const url = new URL(req.url, `http://${req.headers.host}`);
-                const calledNumber = url.searchParams.get('To');
+                // Accept different casing and header sources for the Twilio "To" number
+                let calledNumber = url.searchParams.get('To') || url.searchParams.get('to') || req.headers['x-twilio-to'] || req.headers['x-original-to'] || null;
                 console.log('[VoiceService] Inbound call To number:', calledNumber);
 
                 let t = null;
-                
+
                 // Helper: Check if tenant has the AI configured
                 const isAiConfigured = (tenant) => {
                     return tenant && 
                         tenant.aiName && 
                         tenant.aiWelcomeMessage && 
-                        tenant.customSystemPrompt 
-                    
-                        //&&(tenant.aiConfig && Object.keys(tenant.aiConfig).length > 0);
+                        tenant.customSystemPrompt;
                 };
 
-                // Try to find tenant by exact phone number match
+                // Normalize digits for fuzzy matching
+                const calledDigits = normalizeDigits(calledNumber);
+
+                // 1) Try exact phoneNumber match first (preserves existing behavior)
                 if (calledNumber) {
                     t = await prisma.tenant.findFirst({
                         where: { phoneNumber: calledNumber },
                         select: {
                             id: true,
                             name: true,
+                            phoneNumber: true,
                             aiName: true,
                             aiWelcomeMessage: true,
                             customSystemPrompt: true,
@@ -114,15 +128,60 @@ class VoiceService {
                             timezone: true
                         }
                     });
+
                     if (t && isAiConfigured(t)) {
-                        console.log(`[VoiceService] ✓ Tenant found by phone number: ${t.name} (ID: ${t.id})`);
+                        console.log(`[VoiceService] ✓ Tenant found by exact phone number: ${t.name} (ID: ${t.id})`);
                         console.log('[VoiceService] customSystemPrompt from db:', t?.customSystemPrompt);
                         console.log('[VoiceService] Full tenant object:', JSON.stringify(t, null, 2));
                     } else if (t) {
                         console.log(`[VoiceService] ⚠ Tenant found by phone but has no AI config: ${t.name} (ID: ${t.id})`);
-                        t = null; // Reset to trigger fallback
+                        t = null; // Reset to trigger fuzzy lookup
                     } else {
-                        console.log(`[VoiceService] ⚠ No tenant found for phone number: ${calledNumber}`);
+                        console.log(`[VoiceService] ⚠ No tenant found for exact phone number: ${calledNumber}`);
+                    }
+                }
+
+                // 2) If not found, try normalized and last-digit fuzzy matching to account for formatting differences
+                if (!t && calledDigits) {
+                    try {
+                        const candidates = await prisma.tenant.findMany({
+                            where: { phoneNumber: { not: null } },
+                            select: {
+                                id: true,
+                                name: true,
+                                phoneNumber: true,
+                                aiName: true,
+                                aiWelcomeMessage: true,
+                                customSystemPrompt: true,
+                                aiConfig: true,
+                                timezone: true
+                            },
+                            take: 1000
+                        });
+
+                        const match = candidates.find(c => {
+                            const candDigits = normalizeDigits(c.phoneNumber);
+                            if (!candDigits) return false;
+                            if (candDigits === calledDigits) return true;
+                            // Try last 10 digits, then last 7 as fallback
+                            if (lastNDigits(candDigits, 10) === lastNDigits(calledDigits, 10)) return true;
+                            if (lastNDigits(candDigits, 7) === lastNDigits(calledDigits, 7)) return true;
+                            return false;
+                        });
+
+                        if (match) {
+                            if (isAiConfigured(match)) {
+                                t = match;
+                                console.log(`[VoiceService] ✓ Tenant found by normalized/partial phone match: ${t.name} (ID: ${t.id})`);
+                                console.log('[VoiceService] customSystemPrompt from db:', t?.customSystemPrompt);
+                            } else {
+                                console.log(`[VoiceService] ⚠ Candidate tenant matched by phone but lacks AI config: ${match.name} (ID: ${match.id})`);
+                            }
+                        } else {
+                            console.log('[VoiceService] ⚠ No tenant matched by normalized/partial phone for:', calledNumber);
+                        }
+                    } catch (err) {
+                        console.error('[VoiceService] Error during fuzzy tenant phone lookup:', err.message);
                     }
                 }
 
@@ -182,6 +241,9 @@ class VoiceService {
         if (msg.event === 'start') {
             // Check for tenantId in customParameters (passed from TwilioService)
             const paramTenantId = msg.start.customParameters?.tenantId;
+            if (!paramTenantId) {
+                console.log('[VoiceService] Notice: no customParameters.tenantId provided in start event. To force a tenant, include customParameters.tenantId when starting the Twilio stream.');
+            }
             let currentTenant = tenant;
 
             if (paramTenantId && paramTenantId !== tenant.id) {
