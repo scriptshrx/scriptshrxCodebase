@@ -61,18 +61,31 @@ export default function BookingsPage() {
 
     const fetchClients = async () => {
         try {
-            console.log('[Bookings] Fetching clients...');
+            console.log('[Bookings] Fetching clients from team/leads...');
             const token = localStorage.getItem('token');
             
-            const response = await axios.get(`${API_BASE}/api/clients`, {
+            // Fetch from the same endpoint as the leads page (Captured Leads)
+            const response = await axios.get(`${API_BASE}/api/organization/team`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            console.log(`[Bookings] ✅ Received ${response.data.clients?.length || 0} clients`);
-            setClients(response.data.clients || []);
+            console.log(`[Bookings] ✅ Received ${response.data.team?.length || 0} team members`);
+            setClients(response.data.team || []);
         } catch (error: any) {
-            console.error('[Bookings] ❌ Error fetching clients:', error.message);
+            console.error('[Bookings] ❌ Error fetching team members:', error.message);
             console.error('[Bookings] Status:', error.response?.status);
+            
+            // Fallback to the old clients endpoint if team endpoint fails
+            try {
+                console.log('[Bookings] Falling back to /api/clients endpoint...');
+                const response = await axios.get(`${API_BASE}/api/clients`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                console.log(`[Bookings] ✅ Received ${response.data.clients?.length || 0} clients from fallback`);
+                setClients(response.data.clients || []);
+            } catch (fallbackError: any) {
+                console.error('[Bookings] ❌ Fallback also failed:', fallbackError.message);
+            }
         }
     };
 
@@ -291,9 +304,11 @@ export default function BookingsPage() {
                                 value={newBooking.clientId}
                                 onChange={e => setNewBooking({ ...newBooking, clientId: e.target.value })}
                             >
-                                <option value="">Select Client</option>
+                                <option value="">Select a lead / team member</option>
                                 {clients.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                    <option key={c.id} value={c.id}>
+                                        {c.name} {c.email ? `(${c.email})` : ''}
+                                    </option>
                                 ))}
                             </select>
                             <div className="grid grid-cols-2 gap-4">
