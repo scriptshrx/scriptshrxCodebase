@@ -315,11 +315,19 @@ export default function RegisterContent() {
 
             const response = await axios.post('https://scriptshrxcodebase.onrender.com/api/auth/register', payload);
 
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
+            // Only store token/user for regular signups, NOT for invite registrations
+            if (!isInviteRegistration) {
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+            }
+            
             console.log('Registration successful :', response.data);
 
-            if(isInviteRegistration){alert('You have successfully joined');return}
+            if (isInviteRegistration) {
+                alert('You have successfully joined');
+                return;
+            }
+
             router.push('/dashboard');
         } catch (err: any) {
             console.error('Registration error:', err);
