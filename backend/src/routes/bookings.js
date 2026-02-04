@@ -169,12 +169,12 @@ router.post('/',
                 // 3. Create Booking (meetingLink may be generated below)
                 return await tx.booking.create({
                     data: {
-                        client: { connect: { id: clientId } },
+                        clientId,
+                        tenantId,
                         date: bookingDate,
                         purpose: purpose || '',
                         status: status || 'Scheduled',
-                        meetingLink: manualMeetingLink || null,
-                        tenant: { connect: { id: tenantId } }
+                        meetingLink: manualMeetingLink || null
                     },
                     include: {
                         client: { select: { id: true, name: true, phone: true, email: true } }
@@ -305,7 +305,7 @@ router.patch('/:id',
 
             // Validate input
             const validatedData = updateBookingSchema.parse(req.body);
-            const { date, purpose, status } = validatedData; // Note: Date is already string/datetime validated
+            const { date, purpose, status, meetingLink } = validatedData;
 
             // Verify booking belongs to tenant
             const existingBooking = await prisma.booking.findFirst({
@@ -323,6 +323,7 @@ router.patch('/:id',
             if (date !== undefined) updateData.date = new Date(date);
             if (purpose !== undefined) updateData.purpose = purpose;
             if (status !== undefined) updateData.status = status;
+            if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
 
             const booking = await prisma.booking.update({
                 where: { id },
