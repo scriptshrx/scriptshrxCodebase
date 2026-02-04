@@ -297,10 +297,12 @@ model Workflow {
   isActive  Boolean  @default(true)
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdById String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([tenantId])
+  @@index([createdById])
   @@map("workflows")
 }
 
