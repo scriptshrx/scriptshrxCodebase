@@ -113,10 +113,11 @@ router.post('/',
             console.log(`\x1b[1m[Bookings API] POST /api/bookings\x1b[0m`);
             console.log(`  📝 Creating new booking`);
             console.log(`  UserId: ${req.user?.userId}`);
-            console.log(`  TenantId: ${tenantId}`);
-            console.log(`  Request body:`, JSON.stringify(req.body, null, 2));
             
             const tenantId = req.scopedTenantId || req.body.tenantId || req.user?.tenantId;
+            
+            console.log(`  TenantId: ${tenantId}`);
+            console.log(`  Request body:`, JSON.stringify(req.body, null, 2));
 
             if (!tenantId) {
                 console.error('[Bookings] Missing tenantId in request context', {
