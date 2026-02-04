@@ -94,6 +94,11 @@ const prisma = prismaClient.$extends({
                         if (args.where.tenantId === undefined) {
                             args.where.tenantId = tenantId;
                         }
+
+                        // Workflow privacy: enforce owner access
+                        if (model === 'Workflow' && userId && !args.where.createdById) {
+                            args.where.createdById = userId;
+                        }
                     }
 
                     // For create/createMany, inject tenantId if missing
@@ -101,6 +106,11 @@ const prisma = prismaClient.$extends({
                         if (operation === 'create') {
                             if (!args.data) args.data = {};
                             if (!args.data.tenantId) args.data.tenantId = tenantId;
+
+                            // Workflow privacy: set creator
+                            if (model === 'Workflow' && userId && !args.data.createdById) {
+                                args.data.createdById = userId;
+                            }
                         }
                     }
 
