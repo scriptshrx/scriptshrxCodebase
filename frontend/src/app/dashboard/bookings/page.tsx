@@ -114,14 +114,68 @@ export default function BookingsPage() {
             const token = localStorage.getItem('token');
             const dateTime = new Date(`${newBooking.date}T${newBooking.time}`);
 
-            await axios.post(`${API_BASE}/api/bookings`, {
-                clientId: newBooking.clientId,
-                date: dateTime.toISOString(),
-                purpose: newBooking.purpose,
-                meetingLink: newBooking.meetingLink || undefined
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            // Attempt to create booking. If the selected item is a team member (user) and not a client record,
+            // the backend will return Client not found. In that case, try to resolve a client by email,
+            // or create a new client record and retry the booking with the new client id.
+
+            const tryCreateBooking = async (clientId: string) => {
+                return axios.post(`${API_BASE}/api/bookings`, {
+                    clientId,
+                    date: dateTime.toISOString(),
+                    purpose: newBooking.purpose,
+                    meetingLink: newBooking.meetingLink || undefined
+                }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            };
+
+            try {
+                await tryCreateBooking(newBooking.clientId);
+            } catch (err: any) {
+                // If backend responded with client not found, try to resolve by email or create client
+                const status = err.response?.status;
+                const data = err.response?.data;
+                console.warn('[Bookings] Initial booking attempt failed:', status, data);
+
+                if (data?.error && (data.error.includes('Client not found') || status === 404)) {
+                    // Find selected team member from clients array
+                    const selected = clients.find(c => c.id === newBooking.clientId);
+                    if (selected) {
+                        // Use email if available, otherwise attempt to resolve/create using name/phone
+                        const selectedEmail = selected.email || '';
+                        try {
+                            const searchRes = await axios.get(`${API_BASE}/api/clients?search=${encodeURIComponent(selectedEmail)}`, {
+                                headers: { Authorization: `Bearer ${token}` }
+                            });
+                            const found = (searchRes.data.clients || []).find((cl: any) => selectedEmail ? cl.email === selectedEmail : cl.name === selected.name);
+                            if (found) {
+                                await tryCreateBooking(found.id);
+                            } else {
+                                // Create new client and retry (email may be empty string)
+                                const createRes = await axios.post(`${API_BASE}/api/clients`, {
+                                    name: selected.name || selectedEmail || 'Unknown',
+                                    email: selectedEmail,
+                                    phone: selected.phoneNumber || selected.phone || undefined,
+                                    source: 'Lead'
+                                }, {
+                                    headers: { Authorization: `Bearer ${token}` }
+                                });
+                                const newClientId = createRes.data.client.id;
+                                await tryCreateBooking(newClientId);
+                            }
+                        } catch (resolveErr: any) {
+                            console.error('[Bookings] Failed to resolve or create client for selected team member:', resolveErr);
+                            throw resolveErr;
+                        }
+                    } else {
+                        // No selected client found; rethrow original error
+                        throw err;
+                    }
+                } else {
+                    // Not a client-not-found error; rethrow
+                    throw err;
+                }
+            }
 
             setShowAddModal(false);
             setNewBooking({ clientId: '', date: '', time: '', purpose: '', meetingLink: '' });
@@ -307,7 +361,7 @@ export default function BookingsPage() {
                                 <option value="">Select a lead / team member</option>
                                 {clients.map(c => (
                                     <option key={c.id} value={c.id}>
-                                        {c.name} {c.email ? `(${c.email})` : ''}
+                                        {c.name}
                                     </option>
                                 ))}
                             </select>

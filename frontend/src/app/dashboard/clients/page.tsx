@@ -34,8 +34,8 @@ export default function ClientsPage() {
     const [showConfigureInvite, setShowConfigureInvite] = useState(false);
     const [organizationName, setOrganizationName] = useState('');
     const [inviteFieldsConfig, setInviteFieldsConfig] = useState({
-        name: true,
-        email: true,
+        name: false,
+        email: false,
         phone: false,
         country: false,
         role: false
