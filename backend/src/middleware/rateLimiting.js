@@ -33,7 +33,7 @@ const authLimiter = rateLimit({
 // Registration limiter - prevent trial abuse
 const registerLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 3, // 3 registrations per hour per IP
+    max: 200, // 200 registrations per hour per IP
     message: {
         success: false,
         error: 'Too many registration attempts. Please try again later.',
