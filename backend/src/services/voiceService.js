@@ -297,20 +297,28 @@ class VoiceService {
             // Save InboundCall to database
             try {
                 const callerPhone = msg.start.customParameters?.From;
+                const callSid = msg.start.customParameters?.CallSid;
                 if (callerPhone && currentTenant.id !== 'fallback') {
+                    console.log('[VoiceService] Creating InboundCall with:', { tenantId: currentTenant.id, callerPhone, callSid });
+                    const inboundData = {
+                        tenantId: currentTenant.id,
+                        callerPhone,
+                        status: 'in_progress'
+                    };
+                    if (callSid) {
+                        inboundData.callSid = callSid;
+                    }
                     const inboundCall = await prisma.inboundCall.create({
-                        data: {
-                            tenantId: currentTenant.id,
-                            callerPhone,
-                            callSid: msg.start.customParameters?.CallSid,
-                            status: 'in_progress'
-                        }
+                        data: inboundData
                     });
                     console.log(`[VoiceService] InboundCall created: ${inboundCall.id} from ${callerPhone}`);
                     session.inboundCallId = inboundCall.id;
+                } else {
+                    console.log('[VoiceService] Skipping InboundCall creation - no caller phone or fallback tenant');
                 }
             } catch (err) {
                 console.error('[VoiceService] Failed to save InboundCall:', err.message);
+                console.error('[VoiceService] Full error:', JSON.stringify(err, null, 2));
             }
             
             this.connectToOpenAI(ws);
