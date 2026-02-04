@@ -114,68 +114,54 @@ export default function BookingsPage() {
             const token = localStorage.getItem('token');
             const dateTime = new Date(`${newBooking.date}T${newBooking.time}`);
 
-            // Attempt to create booking. If the selected item is a team member (user) and not a client record,
-            // the backend will return Client not found. In that case, try to resolve a client by email,
-            // or create a new client record and retry the booking with the new client id.
-
-            const tryCreateBooking = async (clientId: string) => {
-                return axios.post(`${API_BASE}/api/bookings`, {
-                    clientId,
-                    date: dateTime.toISOString(),
-                    purpose: newBooking.purpose,
-                    meetingLink: newBooking.meetingLink || undefined
-                }, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-            };
-
-            try {
-                await tryCreateBooking(newBooking.clientId);
-            } catch (err: any) {
-                // If backend responded with client not found, try to resolve by email or create client
-                const status = err.response?.status;
-                const data = err.response?.data;
-                console.warn('[Bookings] Initial booking attempt failed:', status, data);
-
-                if (data?.error && (data.error.includes('Client not found') || status === 404)) {
-                    // Find selected team member from clients array
-                    const selected = clients.find(c => c.id === newBooking.clientId);
-                    if (selected) {
-                        // Use email if available, otherwise attempt to resolve/create using name/phone
-                        const selectedEmail = selected.email || '';
-                        try {
-                            const searchRes = await axios.get(`${API_BASE}/api/clients?search=${encodeURIComponent(selectedEmail)}`, {
-                                headers: { Authorization: `Bearer ${token}` }
-                            });
-                            const found = (searchRes.data.clients || []).find((cl: any) => selectedEmail ? cl.email === selectedEmail : cl.name === selected.name);
-                            if (found) {
-                                await tryCreateBooking(found.id);
-                            } else {
-                                // Create new client and retry (email may be empty string)
-                                const createRes = await axios.post(`${API_BASE}/api/clients`, {
-                                    name: selected.name || selectedEmail || 'Unknown',
-                                    email: selectedEmail,
-                                    phone: selected.phoneNumber || selected.phone || undefined,
-                                    source: 'Lead'
-                                }, {
-                                    headers: { Authorization: `Bearer ${token}` }
-                                });
-                                const newClientId = createRes.data.client.id;
-                                await tryCreateBooking(newClientId);
-                            }
-                        } catch (resolveErr: any) {
-                            console.error('[Bookings] Failed to resolve or create client for selected team member:', resolveErr);
-                            throw resolveErr;
-                        }
+            // Step 1: Resolve team member (user) to client
+            // The dropdown shows team members (users) but bookings require clients (separate records)
+            // If the selected ID is a user ID (not a client ID), resolve it to a client first
+            let resolvedClientId = newBooking.clientId;
+            const selected = clients.find(c => c.id === newBooking.clientId);
+            
+            if (selected && selected.email) {
+                console.log(`[Bookings] Selected: ${selected.name} (${selected.email}), resolving to client...`);
+                try {
+                    // Search for existing client by email
+                    const searchRes = await axios.get(`${API_BASE}/api/clients?search=${encodeURIComponent(selected.email)}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const found = (searchRes.data.clients || []).find((cl: any) => cl.email === selected.email);
+                    
+                    if (found) {
+                        console.log(`[Bookings] ✅ Found existing client: ${found.id}`);
+                        resolvedClientId = found.id;
                     } else {
-                        // No selected client found; rethrow original error
-                        throw err;
+                        // Create new client from team member
+                        console.log(`[Bookings] Creating new client from team member...`);
+                        const createRes = await axios.post(`${API_BASE}/api/clients`, {
+                            name: selected.name,
+                            email: selected.email,
+                            phone: selected.phoneNumber || selected.phone || undefined,
+                            source: 'Team Member'
+                        }, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        resolvedClientId = createRes.data.client.id;
+                        console.log(`[Bookings] ✅ Created new client: ${resolvedClientId}`);
                     }
-                } else {
-                    // Not a client-not-found error; rethrow
-                    throw err;
+                } catch (resolveErr: any) {
+                    console.error('[Bookings] Failed to resolve team member to client:', resolveErr.message);
+                    throw new Error(`Failed to set up client: ${resolveErr.response?.data?.error || resolveErr.message}`);
                 }
             }
+
+            // Step 2: Create booking with resolved client ID
+            console.log(`[Bookings] Creating booking with clientId: ${resolvedClientId}`);
+            await axios.post(`${API_BASE}/api/bookings`, {
+                clientId: resolvedClientId,
+                date: dateTime.toISOString(),
+                purpose: newBooking.purpose,
+                meetingLink: newBooking.meetingLink || undefined
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
             setShowAddModal(false);
             setNewBooking({ clientId: '', date: '', time: '', purpose: '', meetingLink: '' });
@@ -184,7 +170,7 @@ export default function BookingsPage() {
         } catch (error: any) {
             console.error('[Bookings] Error creating booking:', error.message);
             console.error('[Bookings] Response:', error.response?.data);
-            showToast(error.response?.data?.error || 'Failed to create booking.', 'error');
+            showToast(error.response?.data?.error || error.message || 'Failed to create booking.', 'error');
         }
     };
 
