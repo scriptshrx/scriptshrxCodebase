@@ -173,16 +173,17 @@ model Client {
 }
 
 model Booking {
-  id        String   @id @default(uuid())
-  clientId  String
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  date      DateTime
-  status    String   @default("Scheduled")
-  purpose   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  clientId     String
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  date         DateTime
+  status       String   @default("Scheduled")
+  purpose      String?
+  meetingLink  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([tenantId])
   @@index([clientId])

@@ -13,7 +13,7 @@ class BookingService {
     }
 
     async createBooking(tenantId, data) {
-        const { clientId, date, purpose, status } = data;
+        const { clientId, date, purpose, status, meetingLink } = data;
         const requestedDate = new Date(date);
 
         const conflict = await prisma.booking.findFirst({
@@ -34,7 +34,8 @@ class BookingService {
                 tenantId,
                 date: requestedDate,
                 purpose,
-                status: status || 'Scheduled'
+                status: status || 'Scheduled',
+                meetingLink: meetingLink || null
             },
             include: { client: true, tenant: true }
         });
@@ -83,7 +84,7 @@ class BookingService {
         });
         if (!existingBooking) throw new Error('NOT_FOUND: Booking not found');
 
-        const { date, purpose, status } = data;
+        const { date, purpose, status, meetingLink } = data;
 
         if (date && new Date(date).getTime() !== new Date(existingBooking.date).getTime()) {
             const requestedDate = new Date(date);
@@ -106,7 +107,8 @@ class BookingService {
             data: {
                 date: date ? new Date(date) : undefined,
                 purpose,
-                status
+                status,
+                meetingLink: meetingLink !== undefined ? meetingLink : undefined
             },
             include: { client: true, tenant: true }
         });
