@@ -77,14 +77,18 @@ router.post('/register', registerLimiter, async (req, res) => {
             validated = registerSchema.parse(req.body);
             ({ email, password, name, companyName, location, timezone, phone, country, inviteToken = undefined } = validated);
 
-            // If no password, provided for invite registration, generate a temporary one
+            // If no password provided for invite registration, generate a temporary one
             if (inviteToken && !password) {
                 const crypto = require('crypto');
                 password = crypto.randomBytes(16).toString('hex');
             }
 
-            const existingUser = await prisma.user.findUnique({ where: { email } });
-            if (existingUser) return res.status(400).json({ error: 'User already exists' });
+            // For invite registrations, skip the existing user check until we get the email from the invite
+            // For regular registrations, validate email is not already in use
+            if (!inviteToken) {
+                const existingUser = await prisma.user.findUnique({ where: { email } });
+                if (existingUser) return res.status(400).json({ error: 'User already exists' });
+            }
 
             hashedPassword = await bcrypt.hash(password, 10);
         } catch(err){
@@ -107,10 +111,12 @@ router.post('/register', registerLimiter, async (req, res) => {
                 return res.status(400).json({ error: 'Invite has expired' });
             }
 
-            // Only validate email match if invite has a real email (not a temp invite)
-            if (!invite.email.includes('@temp.local') && invite.email !== email) {
-                return res.status(400).json({ error: 'Email does not match invite' });
-            }
+            // Use email from the invite, not from request body
+            email = invite.email;
+
+            // Check if user with this email already exists
+            const existingUser = await prisma.user.findUnique({ where: { email } });
+            if (existingUser) return res.status(400).json({ error: 'User already exists' });
 
             // Create user in existing organization
             const user = await prisma.$transaction(async (prisma) => {

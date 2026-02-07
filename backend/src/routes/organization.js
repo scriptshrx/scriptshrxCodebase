@@ -760,8 +760,16 @@ router.patch('/info',
 
                 if (twilioConfig.phoneNumber) {
                     // Sanitize input: Allow users to paste formats like "+1 866-724-3198"
-                    // We strip everything except '+' and digits.
-                    const cleanedPhone = twilioConfig.phoneNumber.replace(/[^\d+]/g, '');
+                    // Keep digits and '+' but remove other formatting characters.
+                    // Ensure any '+' characters that are not leading are removed, and collapse
+                    // multiple leading '+' into a single leading '+'. This preserves a
+                    // correct leading '+' when the user includes it (E.164 style).
+                    let cleanedPhone = twilioConfig.phoneNumber.replace(/[^\d+]/g, '');
+
+                    // Remove any '+' characters that are not at the start of the string
+                    cleanedPhone = cleanedPhone.replace(/(?!^\+)\+/g, '');
+                    // Collapse multiple leading pluses into a single '+' if present
+                    cleanedPhone = cleanedPhone.replace(/^\++/, '+');
 
                     if (!cleanedPhone.trim()) {
                         console.log('[Organization API] Twilio validation failed: Phone is empty');

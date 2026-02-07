@@ -8,7 +8,7 @@ const PlanEnum = ['Basic', 'Intermediate', 'Advanced'];
 
 // Auth Schemas
 const registerSchema = z.object({
-    email: z.string().email(),
+    email: z.string().email().optional(),
     password: z.string()
         .optional()
         .refine(val => !val || val.length >= 8, 'Password must be at least 8 characters'),
@@ -22,6 +22,10 @@ const registerSchema = z.object({
     role: z.string().optional(),
     inviteToken: z.string().optional()
 }).refine(data => {
+    // Email is required for non-invite registrations
+    if (!data.inviteToken && !data.email) {
+        return false;
+    }
     // Password is required for non-invite registrations
     if (!data.inviteToken && !data.password) {
         return false;
@@ -32,7 +36,7 @@ const registerSchema = z.object({
     }
     return true;
 }, {
-    message: "Password is required for registration",
+    message: "Email and password are required for registration",
     path: ["password"]
 });
 
