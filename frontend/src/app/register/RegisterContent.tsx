@@ -303,8 +303,8 @@ export default function RegisterContent() {
 
             const payload = {
                 name,
-                email,
-                password,
+                email: !isInviteRegistration ? email : undefined, // Email comes from invite token for invite registrations
+                password: !isInviteRegistration ? password : undefined, // Password not needed for invite registrations
                 phone: fieldsConfig.phone ? phone : undefined,
                 country: fieldsConfig.country ? country : undefined,
                 role: isInviteRegistration ? configuredRole : undefined,
@@ -376,8 +376,8 @@ export default function RegisterContent() {
                         </div>
                     )}
 
-                    {/* Full Name - Shown based on field config */}
-                    {(isInviteRegistration ? fieldsConfig.name : true) && (
+                    {/* Full Name - Always shown for invite, configurable for regular signup */}
+                    {isInviteRegistration || !isInviteRegistration && (
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
                             <input
@@ -386,13 +386,13 @@ export default function RegisterContent() {
                                 onChange={(e) => setName(e.target.value)}
                                 className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all duration-200 text-gray-800 placeholder-gray-400"
                                 placeholder="John Doe"
-                                required={isInviteRegistration ? fieldsConfig.name : true}
+                                required={true}
                             />
                         </div>
                     )}
 
-                    {/* Email Address - Shown based on field config */}
-                    {(isInviteRegistration ? fieldsConfig.email : true) && (
+                    {/* Email Address - Hidden for invite registration, shown for regular signup */}
+                    {!isInviteRegistration && (
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                             <input
@@ -401,7 +401,7 @@ export default function RegisterContent() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all duration-200 text-gray-800 placeholder-gray-400"
                                 placeholder="you@example.com"
-                                required={isInviteRegistration ? fieldsConfig.email : true}
+                                required={true}
                             />
                         </div>
                     )}
