@@ -134,7 +134,7 @@ const handleSaveInbound = async () => {
 
 ```tsx
 const handleSaveInbound = async () => {
-    const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/organization/info`, {  // ← Same endpoint
+    const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/organization/info`, {  // ← Same endpoint
         method: 'PATCH',
         body: JSON.stringify({ twilioConfig: { phoneNumber: inboundPhone } })
     });

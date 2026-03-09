@@ -140,7 +140,7 @@ const handleSaveInbound = async () => {
     setInboundSaving(true);
     
     try {
-        const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/organization/info`, {
+        const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/organization/info`, {
             method: 'PATCH',
             headers: getHeaders(),
             body: JSON.stringify({ twilioConfig: { phoneNumber: inboundPhone } })

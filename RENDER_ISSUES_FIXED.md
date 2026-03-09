@@ -184,7 +184,7 @@ The clients endpoint (`/api/clients`) may not be returning data or is not being 
 Test the endpoint directly:
 
 ```bash
-curl -X GET "https://scriptshrxcodebase.onrender.com/api/clients" \
+curl -X GET "https://scriptishrxnewmark.onrender.com/api/clients" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

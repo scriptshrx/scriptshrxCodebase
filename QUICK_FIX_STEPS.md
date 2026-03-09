@@ -95,7 +95,7 @@ Expected: Should see `voice_agents:create`, `voice_agents:read`, `voice_agents:c
 
 ### Test Configure Invite (Should Pass)
 ```bash
-curl -X POST https://scriptshrxcodebase.onrender.com/api/organization/invite \
+curl -X POST https://scriptishrxnewmark.onrender.com/api/organization/invite \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -119,7 +119,7 @@ Expected Response:
 
 ### Test Add Client (Should Pass)
 ```bash
-curl -X POST https://scriptshrxcodebase.onrender.com/api/clients \
+curl -X POST https://scriptishrxnewmark.onrender.com/api/clients \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -145,7 +145,7 @@ Expected Response:
 
 ### Test Create Booking
 ```bash
-curl -X POST https://scriptshrxcodebase.onrender.com/api/bookings \
+curl -X POST https://scriptishrxnewmark.onrender.com/api/bookings \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -157,7 +157,7 @@ curl -X POST https://scriptshrxcodebase.onrender.com/api/bookings \
 
 ### Test Create Workflow
 ```bash
-curl -X POST https://scriptshrxcodebase.onrender.com/api/workflows \
+curl -X POST https://scriptishrxnewmark.onrender.com/api/workflows \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -176,7 +176,7 @@ curl -X POST https://scriptshrxcodebase.onrender.com/api/workflows \
 
 ### Test Outbound Call (Voice Agent)
 ```bash
-curl -X POST https://scriptshrxcodebase.onrender.com/api/voice/outbound \
+curl -X POST https://scriptishrxnewmark.onrender.com/api/voice/outbound \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -289,7 +289,7 @@ CLOUDINARY_API_KEY=your-cloudinary-key (optional)
    ```
 3. **Verify database connection**:
    ```bash
-   curl -X GET https://scriptshrxcodebase.onrender.com/api/clients \
+   curl -X GET https://scriptishrxnewmark.onrender.com/api/clients \
      -H "Authorization: Bearer YOUR_TOKEN" \
      -v
    ```

@@ -8,7 +8,7 @@ import { Input } from './ui/Input';
 
 const API_URL = typeof window !== 'undefined' && process.env.NODE_ENV === 'development'
     ? 'http://localhost:5000'
-    : 'https://scriptshrxcodebase.onrender.com';
+    : 'https://scriptishrxnewmark.onrender.com';
 
 interface Message {
     id: string;

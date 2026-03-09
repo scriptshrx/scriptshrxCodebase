@@ -22,7 +22,7 @@ export default function WorkflowsPage() {
     const [successModal, setSuccessModal] = useState<{ show: boolean, message: string }>({ show: false, message: '' });
 
     // Use provided NEXT_PUBLIC_API_BASE if available, otherwise use Render URL
-    const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || 'https://scriptshrxcodebase.onrender.com';
+    const API_BASE = (process.env.NEXT_PUBLIC_API_BASE as string) || 'https://scriptishrxnewmark.onrender.com';
 
     useEffect(() => {
         // Fetch workflows

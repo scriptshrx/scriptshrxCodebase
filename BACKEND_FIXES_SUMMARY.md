@@ -123,7 +123,7 @@ console.log('Fetched clients:', data.clients); // Debug
 **To Test:**
 ```bash
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  https://scriptshrxcodebase.onrender.com/api/clients
+  https://scriptishrxnewmark.onrender.com/api/clients
 ```
 
 ---
@@ -315,7 +315,7 @@ WHERE email = 'your-email@example.com';
 ### Step 3: Test API Directly
 ```bash
 # Test if permissions are working
-curl -X GET https://scriptshrxcodebase.onrender.com/api/clients \
+curl -X GET https://scriptishrxnewmark.onrender.com/api/clients \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -v
 

@@ -38,7 +38,7 @@ export default function LeadsPage() {
             console.log('[Bookings] Fetching bookings...');
             const token = localStorage.getItem('token');
             
-            const response = await axios.get(`https://scriptshrxcodebase.onrender.com/api/bookings`, {
+            const response = await axios.get(`https://scriptishrxnewmark.onrender.com/api/bookings`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -63,7 +63,7 @@ export default function LeadsPage() {
             let token = localStorage.getItem('token');
             try {
                 console.log('[Leads] Fetching team members (same as bookings)...');
-                const response = await axios.get('https://scriptshrxcodebase.onrender.com/api/organization/team', {
+                const response = await axios.get('https://scriptishrxnewmark.onrender.com/api/organization/team', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 console.log('[Leads] team-members response', response.data);
@@ -75,7 +75,7 @@ export default function LeadsPage() {
                 // fallback to clients, endpoint if team fails
                 try {
                     console.log('[Leads] Falling back to /api/clients...');
-                    const response = await axios.get('https://scriptshrxcodebase.onrender.com/api/clients', {
+                    const response = await axios.get('https://scriptishrxnewmark.onrender.com/api/clients', {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     console.log('[Leads] clients fallback response', response.data);

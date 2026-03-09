@@ -272,7 +272,7 @@ export default function RegisterContent() {
     const fetchInviteMetadata = async (token: string) => {
         try {
             // Fetch the invite details from backend to get metadata
-            const response = await axios.get(`https://scriptshrxcodebase.onrender.com/api/organization/invite/verify/${token}`);
+            const response = await axios.get(`https://scriptishrxnewmark.onrender.com/api/organization/invite/verify/${token}`);
             if (response.data && response.data.invite) {
                 const logoUrl = response.data.invite.metadata?.logoUrl;
                 if (logoUrl) {
@@ -313,7 +313,7 @@ export default function RegisterContent() {
                 inviteToken: inviteToken || undefined
             };
 
-            const response = await axios.post('https://scriptshrxcodebase.onrender.com/api/auth/register', payload);
+            const response = await axios.post('https://scriptishrxnewmark.onrender.com/api/auth/register', payload);
 
             // Only store token/user for regular signups, NOT for invite registrations
             if (!isInviteRegistration) {

@@ -6,7 +6,7 @@ import { Plus, Calendar as CalendarIcon, Clock, Trash2, Edit2, Check, AlertCircl
 import EmptyState from '@/components/EmptyState';
 import CallConversations from '@/components/CallConversations';
 
-const API_BASE = 'https://scriptshrxcodebase.onrender.com';
+const API_BASE = 'https://scriptishrxnewmark.onrender.com';
 
 function Toast({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) {
     useEffect(() => {

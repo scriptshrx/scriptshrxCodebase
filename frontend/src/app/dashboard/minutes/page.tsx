@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, FileText, Calendar, Pencil, Trash2, X, Loader2, Check, AlertCircle, Zap } from 'lucide-react';
 
 // API base: hardcoded to Render backend
-const API_BASE: string = 'https://scriptshrxcodebase.onrender.com';
+const API_BASE: string = 'https://scriptishrxnewmark.onrender.com';
 
 const buildUrl = (path: string) => {
     if (!path) return API_BASE;

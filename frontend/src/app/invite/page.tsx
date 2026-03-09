@@ -43,7 +43,7 @@ export default function InvitePage() {
         try {
             setFetching(true);
             const token = getToken();
-            const response = await axios.get('https://scriptshrxcodebase.onrender.com/api/organization/invites', {
+            const response = await axios.get('https://scriptishrxnewmark.onrender.com/api/organization/invites', {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -67,7 +67,7 @@ export default function InvitePage() {
         try {
             const token = getToken();
             const response = await axios.post(
-                'https://scriptshrxcodebase.onrender.com/api/organization/invite',
+                'https://scriptishrxnewmark.onrender.com/api/organization/invite',
                 { email, role },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -94,7 +94,7 @@ export default function InvitePage() {
         try {
             const token = getToken();
             const response = await axios.post(
-                `https://scriptshrxcodebase.onrender.com/api/organization/invite/${inviteId}/resend`,
+                `https://scriptishrxnewmark.onrender.com/api/organization/invite/${inviteId}/resend`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -124,7 +124,7 @@ export default function InvitePage() {
         try {
             const token = getToken();
             await axios.delete(
-                `https://scriptshrxcodebase.onrender.com/api/organization/invite/${inviteId}`,
+                `https://scriptishrxnewmark.onrender.com/api/organization/invite/${inviteId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setSuccess('Invite cancelled');

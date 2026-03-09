@@ -86,7 +86,7 @@ export default function ClientsPage() {
             const token = localStorage.getItem('token');
             if (!token) return;
 
-            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/organization/info', {
+            const res = await fetch('https://scriptishrxnewmark.onrender.com/api/organization/info', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -276,7 +276,7 @@ export default function ClientsPage() {
 
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/organization/invite', {
+            const res = await fetch('https://scriptishrxnewmark.onrender.com/api/organization/invite', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

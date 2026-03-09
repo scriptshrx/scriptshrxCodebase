@@ -6,7 +6,7 @@ import { Bot, Save, Sparkles, MessageSquare, Plus, Trash2, HelpCircle, Book, Set
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
-const API_URL = 'https://scriptshrxcodebase.onrender.com';
+const API_URL = 'https://scriptishrxnewmark.onrender.com';
 
 interface FAQ {
     question: string;

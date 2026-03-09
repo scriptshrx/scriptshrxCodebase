@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
-const API_URL = 'https://scriptshrxcodebase.onrender.com'
+const API_URL = 'https://scriptishrxnewmark.onrender.com'
 
 interface AIConfig {
     aiName: string;
@@ -42,7 +42,7 @@ export default function VoicePage() {
     const [loading, setLoading] = useState(true);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [inboundPhone, setInboundPhone] = useState('');
-    const [webhookUrl, setWebhookUrl] = useState(`https://scriptshrxcodebase.onrender.com/api/twilio/webhook/voice`);
+    const [webhookUrl, setWebhookUrl] = useState(`https://scriptishrxnewmark.onrender.com/api/twilio/webhook/voice`);
     const [isCalling, setIsCalling] = useState(false);
     const [callStatus, setCallStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [feedbackMessage, setFeedbackMessage] = useState('');
@@ -85,7 +85,7 @@ export default function VoicePage() {
         if (typeof window !== 'undefined') {
             const origin = window.location.origin;
             if (origin.includes('localhost')) {
-                setWebhookUrl('https://scriptshrxcodebase.onrender.com/api/twilio/webhook/voice');
+                setWebhookUrl('https://scriptishrxnewmark.onrender.com/api/twilio/webhook/voice');
             } else {
                 setWebhookUrl(`${origin}/api/twilio/webhook/voice`);
             }
@@ -146,7 +146,7 @@ export default function VoicePage() {
 
     const fetchOrgInfo = async () => {
         try {
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/organization/info`, { headers: getHeaders() });
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/organization/info`, { headers: getHeaders() });
             if (res.ok) {
                 const data = await res.json();
                 if (data.success && data.organization) {
@@ -169,7 +169,7 @@ export default function VoicePage() {
 
     const fetchLogs = async () => {
         try {
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/voice/logs`, { headers: getHeaders() });
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/logs`, { headers: getHeaders() });
             if (res.ok) {
                 const data = await res.json();
                 setLogs(Array.isArray(data) ? data : data.logs || []);
@@ -181,7 +181,7 @@ export default function VoicePage() {
 
     const fetchCallSessions = async () => {
         try {
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/voice/calls`, { headers: getHeaders() });
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/calls`, { headers: getHeaders() });
             if (res.ok) {
                 const data = await res.json();
                 setCallSessions(data.calls || []);
@@ -193,7 +193,7 @@ export default function VoicePage() {
 
     const fetchCallDetail = async (callId: string) => {
         try {
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/voice/calls/${callId}`, { headers: getHeaders() });
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/calls/${callId}`, { headers: getHeaders() });
             if (res.ok) {
                 const data = await res.json();
                 setSelectedCall(data.call);
@@ -207,7 +207,7 @@ export default function VoicePage() {
     const regenerateSummary = async (callId: string) => {
         setIsRegenerating(true);
         try {
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/voice/calls/${callId}/summarize`, {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/calls/${callId}/summarize`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -233,7 +233,7 @@ export default function VoicePage() {
     const createMeetingMinute = async (callId: string) => {
         setIsCreatingMinute(true);
         try {
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/voice/calls/${callId}/meeting-minute`, {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/calls/${callId}/meeting-minute`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -271,7 +271,7 @@ export default function VoicePage() {
             console.log('[Voice Config] Sending PATCH request to /api/organization/info');
             console.log('[Voice Config] Payload:', { aiName: aiConfig.aiName, welcomeMessage: aiConfig.welcomeMessage, systemPrompt: aiConfig.customSystemPrompt });
             
-            const res = await fetch('https://scriptshrxcodebase.onrender.com/api/organization/info', {
+            const res = await fetch('https://scriptishrxnewmark.onrender.com/api/organization/info', {
                 method: 'PATCH',
                 headers: getHeaders(),
                 body: JSON.stringify({
@@ -318,7 +318,7 @@ export default function VoicePage() {
         if (!inboundPhone) return;
         setInboundSaving(true);
         try {
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/organization/info`, {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/organization/info`, {
                 method: 'PATCH',
                 headers: getHeaders(),
                 body: JSON.stringify({ twilioConfig: { phoneNumber: inboundPhone } })
@@ -346,7 +346,7 @@ export default function VoicePage() {
         setCallStatus('idle');
 
         try {
-            const res = await fetch(`https://scriptshrxcodebase.onrender.com/api/voice/outbound`, {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/outbound`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ to: cleanPhone }),
