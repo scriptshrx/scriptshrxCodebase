@@ -23,7 +23,7 @@ export default function LoginPage() {
                 body: JSON.stringify({ email, password }),
             });
 
-            // Check if response has content before parsing JSON
+            // Check if response has contents before parsing JSON
             const contentType = res.headers.get('content-type');
             if (!contentType?.includes('application/json')) {
                 throw new Error('Server returned invalid response');
