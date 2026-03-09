@@ -1,531 +1,793 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import {
-  Stethoscope,
-  Bot,
-  Phone,
-  LayoutList,
-  Users,
-  CreditCard,
-  Key,
-  Globe,
-  ChevronDown,
-  MoreVertical,
-  Search as SearchIcon,
-  Plus,
-  PhoneIncoming
+    Phone, Mic, Activity, Save, Play, PhoneOutgoing, Settings, MessageSquare,
+    Bot, PhoneIncoming, Globe, Copy, Clock, FileText, RefreshCw, X,
+    ChevronRight, User, Calendar, CheckCircle, AlertCircle, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
-// types
+const API_URL = 'https://scriptishrxnewmark.onrender.com'
 
-type AgentType = 'Single Prompt' | 'Multi Prompt' | 'Custom LLM';
+interface AIConfig {
+    aiName: string;
+    welcomeMessage: string;
+    customSystemPrompt: string;
+    model?: string;
+}
 
-type Agent = {
-  id: string;
-  name: string;
-  agentType: AgentType;
-  voiceName: string;
-  phoneNumber?: string | null;
-  provider: string;
-  providerAgentId?: string | null;
-  status: string;
-  prompt?: string | null;
-  promptsJson?: any;
-  llmConfigJson?: any;
-  lastEditedBy?: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-// api helper
-const API_BASE = 'https://scriptishrxcodebase.onrender.com/api';
-
-async function apiFetch(path: string, opts: any = {}) {
-  const headers: any = {
-    'Content-Type': 'application/json',
-    ...opts.headers
-  };
-
-  const res = await fetch(`${API_BASE}${path}`, {
-    credentials: 'include',
-    ...opts,
-    headers
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Request failed');
-  }
-  return res.json();
+interface CallSession {
+    id: string;
+    callSid: string;
+    callerPhone: string;
+    status: string;
+    direction: string;
+    startedAt: string;
+    endedAt?: string;
+    duration?: number;
+    summary?: string;
+    actionItems?: any[];
+    transcript?: string;
+    client?: { id: string; name: string; phone: string };
 }
 
 export default function VoicePage() {
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const[user,setUser]=useState({});
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<'All' | AgentType>('All');
-  const [sortOrder, setSortOrder] = useState<'Newest' | 'Oldest'>('Newest');
+    const [activeTab, setActiveTab] = useState<'config' | 'history'>('config');
+    const [logs, setLogs] = useState<any[]>([]);
+    const [callSessions, setCallSessions] = useState<CallSession[]>([]);
+    const [selectedCall, setSelectedCall] = useState<CallSession | null>(null);
+    const [showCallDetail, setShowCallDetail] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [inboundPhone, setInboundPhone] = useState('');
+    const [webhookUrl, setWebhookUrl] = useState(`https://scriptishrxnewmark.onrender.com/api/twilio/webhook/voice`);
+    const [isCalling, setIsCalling] = useState(false);
+    const [callStatus, setCallStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [feedbackMessage, setFeedbackMessage] = useState('');
+    const [isRegenerating, setIsRegenerating] = useState(false);
+    const [isCreatingMinute, setIsCreatingMinute] = useState(false);
 
-  // tenant details
-  const [tenant, setTenant] = useState<{ name: string; email?: string } | null>(null);
-
-  // modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'assignPhone' | null>(null);
-  const [modalAgent, setModalAgent] = useState<Partial<Agent> | null>(null);
-  const [rowMenuOpenId, setRowMenuOpenId] = useState<string | null>(null);
-
-  const fetchAgents = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await apiFetch('/api/voice-agents');
-      setAgents(data.agents || []);
-    } catch (err: any) {
-      console.error('fetchAgents error', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    
-    const userString = localStorage.getItem('user');
-    if(userString){setUser(JSON.parse(userString));
-      setTenant(JSON.parse(userString));
-    console.log('User is',userString);}
-    fetchAgents();
-
-    // fetch tenant details via settings endpoint (user object includes tenant)
-    (async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/api/settings`, { withCredentials: true });
-        if (res.data && res.data.user && res.data.user.tenant) {
-         console.log('user info', res.data);
-          console.log('tenant info', res.data.user.tenant);
-          setTenant(res.data.user.tenant);
-        }
-    }
-    catch (err) {
-      console.error('fetch tenant error', err);}
-  })();
-  }, [user]);
-
-  const filteredAgents = useMemo(() => {
-    let arr = [...agents];
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      arr = arr.filter(a =>
-        a.name.toLowerCase().includes(q) ||
-        a.voiceName.toLowerCase().includes(q) ||
-        (a.phoneNumber || '').toLowerCase().includes(q)
-      );
-    }
-    if (selectedType !== 'All') {
-      arr = arr.filter(a => a.agentType === selectedType);
-    }
-    arr.sort((a, b) => {
-      const ta = new Date(a.updatedAt).getTime();
-      const tb = new Date(b.updatedAt).getTime();
-      return sortOrder === 'Newest' ? tb - ta : ta - tb;
+    const [aiConfig, setAiConfig] = useState<AIConfig>({
+        aiName: '',
+        welcomeMessage: '',
+        customSystemPrompt: '',
+        model: 'gpt-4'
     });
-    return arr;
-  }, [agents, searchQuery, selectedType, sortOrder]);
+    const [isSaving, setIsSaving] = useState(false);
+    const [inboundSaving, setInboundSaving] = useState(false);
 
-  // actions
-  const openCreate = () => {
-    setModalMode('create');
-    setModalAgent({ agentType: 'Single Prompt', provider: 'retell' });
-    setModalOpen(true);
-  };
+    const getToken = () => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('token');
+        }
+        return null;
+    };
 
-  const openEdit = (agent: Agent) => {
-    setModalMode('edit');
-    setModalAgent(agent);
-    setModalOpen(true);
-  };
+    const getHeaders = () => {
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        const token = getToken();
+        console.log('[Voice Config] Token present:', !!token);
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+            console.log('[Voice Config] Authorization headers set');
+        } else {
+            console.warn('[Voice Config] No token found - request will fail');
+        }
+        return headers;
+    };
 
-  const openAssignPhone = (agent: Agent) => {
-    setModalMode('assignPhone');
-    setModalAgent(agent);
-    setModalOpen(true);
-  };
+    useEffect(() => {
+        console.log('Voice Page Debug: API_URL is set to successfully'); // Debug for User
+        fetchData();
+        // Set webhook URL - Prefer production URL strictly unless dev
+        if (typeof window !== 'undefined') {
+            const origin = window.location.origin;
+            if (origin.includes('localhost')) {
+                setWebhookUrl('https://scriptishrxnewmark.onrender.com/api/twilio/webhook/voice');
+            } else {
+                setWebhookUrl(`${origin}/api/twilio/webhook/voice`);
+            }
+        }
 
-  const closeModal = () => {
-    setModalOpen(false);
-    setModalAgent(null);
-    setModalMode(null);
-  };
+        // Setup WebSocket for real-time call updates
+        let socket: any = null;
+        const setupSocket = async () => {
+            try {
+                const { io } = await import('socket.io-client');
+                const token = getToken();
+                if (!token) return;
 
-  const handleSave = async () => {
-    if (!modalAgent) return;
-    try {
-      if (modalMode === 'create') {
-        await apiFetch('/api/voice-agents', {
-          method: 'POST',
-          body: JSON.stringify(modalAgent)
+                socket = io(API_URL, {
+                    auth: { token },
+                    transports: ['websocket', 'polling']
+                });
+
+                socket.on('connect', () => {
+                    console.log('[Voice] Socket connected for real-time updates');
+                });
+
+                socket.on('call:started', (data: any) => {
+                    console.log('[Voice] Call started:', data);
+                    // Refresh call list immediately
+                    fetchCallSessions();
+                });
+
+                socket.on('call:ended', (data: any) => {
+                    console.log('[Voice] Call ended:', data);
+                    // Refresh call list after a small delay to allow DB write
+                    setTimeout(() => fetchCallSessions(), 1000);
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('[Voice] Socket disconnected');
+                });
+
+            } catch (error) {
+                console.error('[Voice] Socket setup error:', error);
+            }
+        };
+
+        setupSocket();
+
+        // Cleanup
+        return () => {
+            if (socket) {
+                socket.disconnect();
+            }
+        };
+    }, []);
+
+    const fetchData = async () => {
+        await Promise.all([fetchOrgInfo(), fetchLogs(), fetchCallSessions()]);
+        setLoading(false);
+    };
+
+    const fetchOrgInfo = async () => {
+        try {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/organization/info`, { headers: getHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.organization) {
+                    const org = data.organization;
+                    setAiConfig({
+                        aiName: org.aiConfig?.aiName || org.aiName || 'ScriptishRx Assistant',
+                        welcomeMessage: org.aiConfig?.welcomeMessage || org.aiWelcomeMessage || 'Hello, how can I help you today?',
+                        customSystemPrompt: org.customSystemPrompt || org.aiConfig?.systemPrompt || 'You are a helpful assistant. IMPORTANT: Always respond in English only, regardless of the caller\'s language. Never respond in other languages.',
+                        model: org.aiConfig?.model || 'gpt-4'
+                    });
+                    if (org.twilioConfig?.phoneNumber) {
+                        setInboundPhone(org.twilioConfig.phoneNumber);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching org info:', error);
+        }
+    };
+
+    const fetchLogs = async () => {
+        try {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/logs`, { headers: getHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                setLogs(Array.isArray(data) ? data : data.logs || []);
+            }
+        } catch (error) {
+            console.error('Error fetching logs:', error);
+        }
+    };
+
+    const fetchCallSessions = async () => {
+        try {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/calls`, { headers: getHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                setCallSessions(data.calls || []);
+            }
+        } catch (error) {
+            console.error('Error fetching call sessions:', error);
+        }
+    };
+
+    const fetchCallDetail = async (callId: string) => {
+        try {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/calls/${callId}`, { headers: getHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                setSelectedCall(data.call);
+                setShowCallDetail(true);
+            }
+        } catch (error) {
+            console.error('Error fetching call detail:', error);
+        }
+    };
+
+    const regenerateSummary = async (callId: string) => {
+        setIsRegenerating(true);
+        try {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/calls/${callId}/summarize`, {
+                method: 'POST',
+                headers: getHeaders()
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (selectedCall) {
+                    setSelectedCall({ ...selectedCall, summary: data.summary?.summary });
+                }
+                await fetchCallSessions();
+                alert('Summary regenerated successfully!');
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Failed to regenerate summary');
+            }
+        } catch (error) {
+            console.error('Error regenerating summary:', error);
+            alert('Error regenerating summary');
+        } finally {
+            setIsRegenerating(false);
+        }
+    };
+
+    const createMeetingMinute = async (callId: string) => {
+        setIsCreatingMinute(true);
+        try {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/calls/${callId}/meeting-minute`, {
+                method: 'POST',
+                headers: getHeaders()
+            });
+            if (res.ok) {
+                alert('Meeting minute created successfully! View it in Meeting Minutes.');
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Failed to create meeting minute');
+            }
+        } catch (error) {
+            console.error('Error creating meeting minute:', error);
+            alert('Error creating meeting minute');
+        } finally {
+            setIsCreatingMinute(false);
+        }
+    };
+
+    const handleSaveConfig = async () => {
+        // Validation: Ensure all required fields are filled
+        if (!aiConfig.aiName || !aiConfig.aiName.trim()) {
+            alert('Agent Name is required');
+            return;
+        }
+        if (!aiConfig.welcomeMessage || !aiConfig.welcomeMessage.trim()) {
+            alert('Welcome Message is required');
+            return;
+        }
+        if (!aiConfig.customSystemPrompt || !aiConfig.customSystemPrompt.trim()) {
+            alert('System Instructions are required');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            console.log('[Voice Config] Sending PATCH request to /api/organization/info');
+            console.log('[Voice Config] Payload:', { aiName: aiConfig.aiName, welcomeMessage: aiConfig.welcomeMessage, systemPrompt: aiConfig.customSystemPrompt });
+            
+            const res = await fetch('https://scriptishrxnewmark.onrender.com/api/organization/info', {
+                method: 'PATCH',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    aiName: aiConfig.aiName,
+                    aiWelcomeMessage: aiConfig.welcomeMessage,
+                    customSystemPrompt: aiConfig.customSystemPrompt,
+                    aiConfig: {
+                        aiName: aiConfig.aiName,
+                        welcomeMessage: aiConfig.welcomeMessage,
+                        systemPrompt: aiConfig.customSystemPrompt,
+                        model: aiConfig.model
+                    }
+                })
+            });
+            
+            console.log('[Voice Config] Response status:', res.status);
+            
+            let data;
+            try {
+                data = await res.json();
+                console.log('[Voice Config] Response data:', data);
+            } catch (parseError) {
+                console.error('[Voice Config] Failed to parse response:', parseError);
+                alert(`Server error (${res.status}): Unable to parse response`);
+                return;
+            }
+            
+            if (res.ok) {
+                alert('AI Agent configuration saved successfully!');
+            } else {
+                alert(data.error || `Failed to save configuration (${res.status})`);
+            }
+        } catch (error: any) {
+            console.error('[Voice Config] Error saving config:', error);
+            console.error('[Voice Config] Error type:', error.name);
+            console.error('[Voice Config] Error message:', error.message);
+            alert(error.message || 'Error saving configuration');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSaveInbound = async () => {
+        if (!inboundPhone) return;
+        setInboundSaving(true);
+        try {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/organization/info`, {
+                method: 'PATCH',
+                headers: getHeaders(),
+                body: JSON.stringify({ twilioConfig: { phoneNumber: inboundPhone } })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert('Inbound number updated! Please ensure your Twilio webhook is set.');
+            } else {
+                alert(data.error || 'Failed to save inbound number');
+            }
+        } catch (error) {
+            console.error('Error saving inbound:', error);
+            alert('An unexpected error occurred.');
+        } finally {
+            setInboundSaving(false);
+        }
+    };
+
+    const handleCall = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const cleanPhone = phoneNumber.trim();
+        if (!cleanPhone) return;
+
+        setIsCalling(true);
+        setCallStatus('idle');
+
+        try {
+            const res = await fetch(`https://scriptishrxnewmark.onrender.com/api/voice/outbound`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ to: cleanPhone }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || data.error || 'Call failed');
+            setCallStatus('success');
+            setFeedbackMessage('Call initiated! Your AI agent will answer.');
+            setPhoneNumber('');
+            setTimeout(() => { fetchLogs(); fetchCallSessions(); }, 2000);
+        } catch (error: any) {
+            console.error('Call error:', error);
+            setCallStatus('error');
+            setFeedbackMessage(error.message);
+        } finally {
+            setIsCalling(false);
+        }
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        alert('Copied to clipboard!');
+    };
+
+    const formatDuration = (seconds?: number) => {
+        if (!seconds) return '--';
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const formatDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleString(undefined, {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
         });
-      } else if (modalMode === 'edit' && modalAgent.id) {
-        await apiFetch(`/api/voice-agents/${modalAgent.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(modalAgent)
-        });
-      } else if (modalMode === 'assignPhone' && modalAgent.id) {
-        await apiFetch(`/api/voice-agents/${modalAgent.id}/assign-phone`, {
-          method: 'POST',
-          body: JSON.stringify({ phoneNumber: modalAgent.phoneNumber })
-        });
-      }
-      await fetchAgents();
-      closeModal();
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
+    };
 
-  const handleDelete = async (agent: Agent) => {
-    if (!confirm(`Delete agent '${agent.name}'?`)) return;
-    try {
-      await apiFetch(`/api/voice-agents/${agent.id}`, { method: 'DELETE' });
-      await fetchAgents();
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
+    const getStatusBadge = (status: string) => {
+        const styles: Record<string, string> = {
+            'completed': 'bg-green-50 text-green-700 border-green-100',
+            'in_progress': 'bg-blue-50 text-blue-700 border-blue-100',
+            'failed': 'bg-red-50 text-red-600 border-red-100'
+        };
+        return styles[status] || 'bg-gray-50 text-gray-600 border-gray-100';
+    };
 
-  const handleDuplicate = async (agent: Agent) => {
-    const copy = { ...agent, name: `${agent.name} (copy)` };
-    delete copy.id;
-    try {
-      await apiFetch('/api/voice-agents', { method: 'POST', body: JSON.stringify(copy) });
-      await fetchAgents();
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
-
-  // render
-  return (
-    user?.email!=='ezehmark@gmail.com'?
-    <div className='h-full w-full items-center justify-center bg-gray-300 flex'>
-      <div className='flex items-center justify-center flex-col gap-4'>
-        <div className='h-10 w-10 rounded-full border border-2 border-t-transparent animate-spin'></div>
-          <div className='text-gray-900 font-bold text-xl'>Development Ongoing, Please Wait</div>
-        </div>
-      
-
-    </div>
-    :
-    <div className="flex min-h-screen bg-gray-50 text-gray-800">
-      {/* sidebar (same as before) */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between">
-        <div>
-          <div className="p-6 flex items-center gap-2 text-xl font-bold">
-            <Stethoscope className="w-6 h-6 text-blue-600" />
-            <span>ScriptishRx</span>
-          </div>
-          <div className="px-6 mb-6 flex items-center gap-3">
-            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium">
-              {tenant ? tenant.name.charAt(0).toUpperCase() : 'T'}
+    return (
+        <div className="space-y-8 max-w-7xl mx-auto pb-12">
+            {/* Header */}
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Voice Agent Studio</h1>
+                    <p className="text-gray-500 mt-2">Design, train, and manage your AI voice concierge.</p>
+                </div>
             </div>
-            <span className="truncate">{tenant ? `${tenant.name}'s${'\n'}Workspace` : "Tenant's Workspace"}</span>
-          </div>
-          <nav className="px-4 space-y-1">
-            {[
-              { name: 'Voice Agents', icon: LayoutList, active: true },
-              { name: 'Phone Numbers', icon: Phone },
-              { name: 'Call Logs', icon: PhoneIncoming },
-              { name: 'Patients', icon: Users },
-              { name: 'Billing', icon: CreditCard },
-              { name: 'API Keys', icon: Key },
-              { name: 'Webhooks', icon: Globe }
-            ].map(item => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.name}
-                  className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer ${
-                    item.active ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-100'
-                  }`}
+
+            {/* Tab Navigation */}
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-xl w-fit">
+                <button
+                    onClick={() => setActiveTab('config')}
+                    className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all ${activeTab === 'config'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-sm truncate">{item.name}</span>
-                </div>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="p-6 space-y-4 border-t border-gray-200">
-          <div className="bg-gray-100 p-3 rounded-lg text-xs">
-            <div className="font-semibold">Pay As You Go</div>
-            <div className="text-gray-600">Upcoming Invoice: $25.68</div>
-          </div>
-          <div className="flex items-center gap-2 cursor-pointer">
-            <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium">
-              {tenant ? tenant.name.charAt(0).toUpperCase() : 'T'}
+                    <Settings className="w-4 h-4 inline-block mr-2" />
+                    Configuration
+                </button>
+                <button
+                    onClick={() => setActiveTab('history')}
+                    className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all ${activeTab === 'history'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <Clock className="w-4 h-4 inline-block mr-2" />
+                    Call History
+                    {callSessions.length > 0 && (
+                        <span className="ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full">
+                            {callSessions.length}
+                        </span>
+                    )}
+                </button>
             </div>
-            <span className="text-sm truncate">{tenant?.email || '—'}</span>
-          </div>
-        </div>
-      </aside>
 
-      {/* main */}
-      <main className="flex-1 p-8">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Voice Agents</h1>
-            <p className="text-sm text-gray-500">Manage ScriptishRx voice agents</p>
-          </div>
-          <div className="relative">
-            <Button onClick={openCreate} className="bg-gray-900 text-white">
-              <Plus className="w-4 h-4 mr-2" />Create Voice Agent <ChevronDown className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-        </div>
+            {/* Configuration Tab */}
+            {activeTab === 'config' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Left Column: AI Logic Configuration */}
+                    <div className="lg:col-span-7 space-y-6">
+                        <div className="bg-white rounded-[1.5rem] shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+                                <div className="p-2 bg-blue-600 text-white rounded-lg shadow-sm">
+                                    <Bot className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900">AI Personality & Logic</h2>
+                                    <p className="text-gray-500 text-xs mt-0.5">Customize how the AI thinks and speaks.</p>
+                                </div>
+                            </div>
 
-        {/* controls */}
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="relative flex-1 min-w-[200px]">
-            <Input
-              placeholder="Search agents"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-            <SearchIcon className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-          </div>
-          <div>
-            <select
-              value={selectedType}
-              onChange={e => setSelectedType(e.target.value as any)}
-              className="h-10 px-3 rounded-md border border-gray-300 bg-white text-gray-700 text-sm"
-            >
-              <option>All</option>
-              <option>Single Prompt</option>
-              <option>Multi Prompt</option>
-              <option>Custom LLM</option>
-            </select>
-          </div>
-          <div>
-            <select
-              value={sortOrder}
-              onChange={e => setSortOrder(e.target.value as any)}
-              className="h-10 px-3 rounded-md border border-gray-300 bg-white text-gray-700 text-sm"
-            >
-              <option>Newest</option>
-              <option>Oldest</option>
-            </select>
-          </div>
-        </div>
+                            <div className="p-6 space-y-6">
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-gray-800">Agent Name</label>
+                                        <Input
+                                            value={aiConfig.aiName}
+                                            onChange={(e) => setAiConfig({ ...aiConfig, aiName: e.target.value })}
+                                            placeholder="e.g. Sarah from Front Desk"
+                                            className="bg-white border border-gray-300 text-gray-900"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-gray-800">AI Model</label>
+                                        <select
+                                            value={aiConfig.model}
+                                            onChange={(e) => setAiConfig({ ...aiConfig, model: e.target.value })}
+                                            className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-gray-900 text-sm"
+                                        >
+                                            <option value="gpt-4">GPT-4 (Recommended)</option>
+                                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Fastest)</option>
+                                        </select>
+                                    </div>
+                                </div>
 
-        {/* list */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Agent Name</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Agent Type</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Voice</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Phone</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Edited</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                    Loading...
-                  </td>
-                </tr>
-              )}
-              {!loading && filteredAgents.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                    No agents found.
-                  </td>
-                </tr>
-              )}
-              {filteredAgents.map(agent => (
-                <tr
-                  key={agent.id}
-                  className="hover:bg-gray-50 cursor-pointer relative"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Bot className="w-4 h-4 text-gray-500" />
-                      <span className="truncate max-w-[200px]">{agent.name}</span>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-800">Welcome Message</label>
+                                    <Input
+                                        value={aiConfig.welcomeMessage}
+                                        onChange={(e) => setAiConfig({ ...aiConfig, welcomeMessage: e.target.value })}
+                                        placeholder="e.g. Thanks for calling ScriptishRx. How can I help?"
+                                        className="bg-white border border-gray-300 text-gray-900"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-800">System Instructions</label>
+                                    <textarea
+                                        value={aiConfig.customSystemPrompt}
+                                        onChange={(e) => setAiConfig({ ...aiConfig, customSystemPrompt: e.target.value })}
+                                        placeholder="Describe your business, hours, and how to handle scenarios..."
+                                        className="w-full min-h-[200px] p-4 rounded-xl border border-gray-300 bg-white text-gray-900 text-sm resize-y"
+                                    />
+                                </div>
+
+                                <Button
+                                    onClick={handleSaveConfig}
+                                    disabled={isSaving}
+                                    className="w-full h-12 bg-gray-900 hover:bg-black text-white rounded-xl font-semibold"
+                                >
+                                    {isSaving ? <Activity className="w-5 h-5 animate-spin mr-2" /> : <Save className="w-5 h-5 mr-2" />}
+                                    {isSaving ? 'Saving...' : 'Save AI Configuration'}
+                                </Button>
+                            </div>
+                        </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
-                      {agent.agentType}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium">
-                        {agent.voiceName[0]}
-                      </div>
-                      <span className="truncate max-w-[120px]">{agent.voiceName}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {agent.phoneNumber ? (
-                      <span className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-mono">
-                        {agent.phoneNumber}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(agent.updatedAt).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 text-right relative">
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        setRowMenuOpenId(rowMenuOpenId === agent.id ? null : agent.id);
-                      }}
-                      className="p-1 hover:bg-gray-100 rounded-full"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                    {rowMenuOpenId === agent.id && (
-                      <div className="absolute right-4 top-10 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                        <button
-                          onClick={() => openEdit(agent)}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDuplicate(agent)}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
-                        >
-                          Duplicate
-                        </button>
-                        <button
-                          onClick={() => openAssignPhone(agent)}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
-                        >
-                          Assign Phone
-                        </button>
-                        <button
-                          onClick={() => handleDelete(agent)}
-                          className="w-full text-left px-4 py-2 hover:bg-red-100 text-sm text-red-600"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </main>
 
-      {/* modals */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {modalMode === 'create' && 'Create Voice Agent'}
-              {modalMode === 'edit' && 'Edit Voice Agent'}
-              {modalMode === 'assignPhone' && 'Assign Phone'}
-            </h2>
-            {modalMode === 'assignPhone' ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-800">Phone Number</label>
-                  <Input
-                    value={modalAgent?.phoneNumber || ''}
-                    onChange={e => setModalAgent({ ...modalAgent, phoneNumber: e.target.value })}
-                    placeholder="+1 234 567 8900"
-                    className="bg-white border-gray-300 text-gray-900"
-                  />
+                    {/* Right Column: Inbound & Outbound */}
+                    <div className="lg:col-span-5 space-y-6">
+                        {/* Inbound Configuration */}
+                        <div className="bg-white rounded-[1.5rem] shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+                                <div className="p-2 bg-purple-600 text-white rounded-lg shadow-sm">
+                                    <PhoneIncoming className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900">Inbound Configuration</h2>
+                                    <p className="text-gray-500 text-xs mt-0.5">Set up your business phone line.</p>
+                                </div>
+                            </div>
+                            <div className="p-6 space-y-5">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-800">Twilio Phone Number</label>
+                                    <Input
+                                        value={inboundPhone}
+                                        onChange={(e) => setInboundPhone(e.target.value)}
+                                        placeholder="+1 234 567 8900"
+                                        className="bg-white border-gray-300 text-gray-900"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-800">Webhook URL</label>
+                                    <div className="flex gap-2">
+                                        <Input readOnly value={webhookUrl} className="bg-gray-50 text-gray-500 text-xs font-mono" />
+                                        <Button variant="outline" onClick={() => copyToClipboard(webhookUrl)} className="px-3">
+                                            <Copy className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <Button
+                                    onClick={handleSaveInbound}
+                                    disabled={inboundSaving || !inboundPhone}
+                                    className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
+                                >
+                                    {inboundSaving ? 'Saving...' : 'Link Inbound Number'}
+                                </Button>
+                            </div>
+                        </div>
+                        {/* Live Agent Preview (Outbound) */}
+                        <div className="bg-white rounded-[1.5rem] shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
+                                <div className="p-2 bg-green-600 text-white rounded-lg shadow-sm">
+                                    <PhoneOutgoing className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900">Outbound Call Settings</h2>
+                                    <p className="text-gray-500 text-xs mt-0.5">Configure outbound call number.</p>
+                                </div>
+                            </div>
+                            <div className="p-6 space-y-5">
+                                <form onSubmit={handleCall} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-gray-800">Your Phone Number</label>
+                                        <Input
+                                            placeholder="+2349036202766 (include + and country code)"
+                                            value={phoneNumber}
+                                            onChange={(e) => setPhoneNumber(e.target.value)}
+                                            className="h-11 bg-gray-50 border border-gray-300 text-gray-900 placeholder:text-gray-400 focus-visible:ring-green-500 rounded-xl px-4"
+                                        />
+                                    </div>
+                                    <Button
+                                        type="submit"
+                                        className="w-full h-11 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold"
+                                        disabled={isCalling || !phoneNumber}
+                                    >
+                                        {isCalling ? <><Activity className="w-4 h-4 animate-spin mr-2" /> Calling...</> : 'Call Client'}
+                                    </Button>
+                                    {callStatus === 'success' && (
+                                        <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm text-center border border-green-100">
+                                            {feedbackMessage}
+                                        </div>
+                                    )}
+                                    {callStatus === 'error' && (
+                                        <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center border border-red-100">
+                                            {feedbackMessage}
+                                        </div>
+                                    )}
+                                </form>
+                            </div>
+                        </div>
+
+                        {/* Quick Stats */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm text-center">
+                                <div className="text-3xl font-bold text-gray-900 mb-1">{callSessions.length}</div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Total Calls</div>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm text-center">
+                                <div className="text-3xl font-bold text-green-600 mb-1">Active</div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={closeModal}>Cancel</Button>
-                  <Button onClick={handleSave}>Save</Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-800">Agent Name</label>
-                  <Input
-                    value={modalAgent?.name || ''}
-                    onChange={e => setModalAgent({ ...modalAgent, name: e.target.value })}
-                    placeholder="Front Desk Bot"
-                    className="bg-white border-gray-300 text-gray-900"
-                  />
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-800">Agent Type</label>
-                    <select
-                      value={modalAgent?.agentType}
-                      onChange={e => setModalAgent({ ...modalAgent, agentType: e.target.value as AgentType })}
-                      className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-gray-900 text-sm"
-                    >
-                      <option>Single Prompt</option>
-                      <option>Multi Prompt</option>
-                      <option>Custom LLM</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-800">Voice Name</label>
-                    <Input
-                      value={modalAgent?.voiceName || ''}
-                      onChange={e => setModalAgent({ ...modalAgent, voiceName: e.target.value })}
-                      placeholder="Ethan, Anna, etc."
-                      className="bg-white border-gray-300 text-gray-900"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-800">Provider</label>
-                  <select
-                    value={modalAgent?.provider || 'retell'}
-                    onChange={e => setModalAgent({ ...modalAgent, provider: e.target.value })}
-                    className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-gray-900 text-sm"
-                  >
-                    <option value="retell">Retell</option>
-                    <option value="twilio">Twilio</option>
-                    <option value="custom">Custom</option>
-                  </select>
-                </div>
-                {modalAgent?.agentType === 'Single Prompt' && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-800">Prompt</label>
-                    <textarea
-                      value={modalAgent?.prompt || ''}
-                      onChange={e => setModalAgent({ ...modalAgent, prompt: e.target.value })}
-                      className="w-full min-h-[100px] p-3 border border-gray-300 rounded-xl text-gray-900"
-                    />
-                  </div>
-                )}
-                {/* additional config fields could be added for multi/custom */}
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={closeModal}>Cancel</Button>
-                  <Button onClick={handleSave}>Save</Button>
-                </div>
-              </div>
             )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
+            {/* Call History Tab */}
+            {activeTab === 'history' && (
+                <div className="space-y-6">
+                    {/* Refresh Button */}
+                    <div className="flex justify-end">
+                        <Button variant="outline" onClick={fetchCallSessions} className="gap-2">
+                            <RefreshCw className="w-4 h-4" />
+                            Refresh
+                        </Button>
+                    </div>
+
+                    {/* Call Sessions Table */}
+                    <div className="bg-white rounded-[1.5rem] shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b border-gray-100">
+                                    <tr>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Caller</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Duration</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Summary</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Date</th>
+                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {callSessions.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="px-8 py-12 text-center text-gray-500">
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                                                        <Phone className="w-6 h-6 text-gray-400" />
+                                                    </div>
+                                                    <p className="font-medium">No calls recorded yet.</p>
+                                                    <p className="text-sm text-gray-400">Inbound calls will appear here with transcripts and summaries.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        callSessions.map((call) => (
+                                            <tr key={call.id} className="hover:bg-blue-50/30 transition-colors group cursor-pointer" onClick={() => fetchCallDetail(call.id)}>
+                                                <td className="px-6 py-4">
+                                                    <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider border ${getStatusBadge(call.status)}`}>
+                                                        {call.status === 'in_progress' ? 'Live' : call.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div>
+                                                        <p className="font-semibold text-gray-900 group-hover:text-blue-600">
+                                                            {call.client?.name || call.callerPhone || 'Unknown'}
+                                                        </p>
+                                                        {call.client && <p className="text-xs text-gray-500">{call.callerPhone}</p>}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-600 font-mono">
+                                                    {formatDuration(call.duration)}
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
+                                                    {call.summary || <span className="text-gray-400 italic">No summary</span>}
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-500 text-sm">
+                                                    {formatDate(call.startedAt)}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                                                        View <ChevronRight className="w-4 h-4 ml-1" />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Call Detail Modal */}
+            {showCallDetail && selectedCall && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-600 text-white rounded-xl">
+                                    <Phone className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900">Call Details</h2>
+                                    <p className="text-sm text-gray-500">
+                                        {selectedCall.client?.name || selectedCall.callerPhone} • {formatDate(selectedCall.startedAt)}
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowCallDetail(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            {/* Call Info */}
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="bg-gray-50 p-4 rounded-xl">
+                                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Duration</p>
+                                    <p className="text-xl font-bold text-gray-900">{formatDuration(selectedCall.duration)}</p>
+                                </div>
+                                <div className="bg-gray-50 p-4 rounded-xl">
+                                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Status</p>
+                                    <p className={`text-xl font-bold ${selectedCall.status === 'completed' ? 'text-green-600' : 'text-blue-600'}`}>
+                                        {selectedCall.status === 'completed' ? 'Completed' : 'In Progress'}
+                                    </p>
+                                </div>
+                                <div className="bg-gray-50 p-4 rounded-xl">
+                                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Direction</p>
+                                    <p className="text-xl font-bold text-gray-900 capitalize">{selectedCall.direction}</p>
+                                </div>
+                            </div>
+
+                            {/* Summary */}
+                            <div className="bg-blue-50 p-5 rounded-xl border border-blue-100">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="font-bold text-gray-900">AI Summary</h3>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => regenerateSummary(selectedCall.id)}
+                                        disabled={isRegenerating}
+                                        className="text-blue-600 hover:text-blue-700"
+                                    >
+                                        {isRegenerating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                                        Regenerate
+                                    </Button>
+                                </div>
+                                <p className="text-gray-700">
+                                    {selectedCall.summary || 'No summary available. Click Regenerate to create one.'}
+                                </p>
+                            </div>
+
+                            {/* Action Items */}
+                            {selectedCall.actionItems && selectedCall.actionItems.length > 0 && (
+                                <div className="bg-amber-50 p-5 rounded-xl border border-amber-100">
+                                    <h3 className="font-bold text-gray-900 mb-3">Action Items</h3>
+                                    <ul className="space-y-2">
+                                        {selectedCall.actionItems.map((item: any, i: number) => (
+                                            <li key={i} className="flex items-start gap-2">
+                                                <CheckCircle className="w-4 h-4 text-amber-600 mt-0.5" />
+                                                <span className="text-gray-700">{item.description}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Transcript */}
+                            {selectedCall.transcript && (
+                                <div>
+                                    <h3 className="font-bold text-gray-900 mb-3">Full Transcript</h3>
+                                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 max-h-64 overflow-y-auto">
+                                        <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">
+                                            {selectedCall.transcript}
+                                        </pre>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between">
+                            <Button variant="outline" onClick={() => setShowCallDetail(false)}>
+                                Close
+                            </Button>
+                            <Button
+                                onClick={() => createMeetingMinute(selectedCall.id)}
+                                disabled={isCreatingMinute || !selectedCall.transcript}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                                {isCreatingMinute ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileText className="w-4 h-4 mr-2" />}
+                                Create Meeting Minute
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
