@@ -367,7 +367,7 @@ export default function ChatInterface({ tenantId: propTenantId, token, isDashboa
                     </Button>
                 </form>
                 <div className="text-center mt-3">
-                    <p className="text-[10px] font-medium text-slate-400/80 uppercase tracking-widest">Powered by ScriptishRx AI</p>
+                    <p className="text-[10px] font-medium text-slate-400/80 uppercase tracking-widest">Powered by Scriptish AI</p>
                 </div>
             </div>
         </div>

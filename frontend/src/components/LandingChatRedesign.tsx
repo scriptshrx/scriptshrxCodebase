@@ -7,13 +7,13 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 
 const BRAND_COLOR = "bg-blue-600";
-const BRAND_TEXT = "ScriptishRx";
+const BRAND_TEXT = "Scriptish";
 const WELCOME_MSG = "AI-Powered Business Automation";
 
 const FAQ_ITEMS = [
     { q: "What is the pricing?", a: "Startup: $99.99 (50 bookings), Growth: $149.99 (Unlimited), Enterprise: $249.99 (White label)." },
     { q: "How long is the free trial?", a: "The free trial lasts for 14 days with full access to premium features." },
-    { q: "Is it mobile-friendly?", a: "Yes, ScriptishRx is fully optimized for mobile devices." },
+    { q: "Is it mobile-friendly?", a: "Yes, Scriptish is fully optimized for mobile devices." },
     { q: "How secure is my data?", a: "We are SOC2 Type II compliant with enterprise-grade encryption." },
     { q: "Do you offer refunds?", a: "Yes, we offer a 30-day money-back guarantee." }
 ];
@@ -37,7 +37,7 @@ export default function LandingChatRedesign({ onClose }: { onClose?: () => void 
         {
             id: 'init_1',
             role: 'assistant',
-            content: 'Hello! I am the ScriptishRx AI assistant. I can help with free trials, pricing, or setting up your automation. How can I help you today?',
+            content: 'Hello! I am the Scriptish AI assistant. I can help with free trials, pricing, or setting up your automation. How can I help you today?',
             timestamp: new Date()
         }
     ]);

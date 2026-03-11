@@ -52,7 +52,7 @@ export default function LoginPage() {
             <div className="bg-white/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/50">
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-4">
-                        <img src="/logo.jpg" alt="ScriptishRx" className="h-20 w-auto" />
+                        <img src="/newLogo.png" alt="Scriptish" className="h-20 w-auto" />
                     </div>
                     <p className="text-blue-600 font-medium">Welcome back, please sign in.</p>
                 </div>

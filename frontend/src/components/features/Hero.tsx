@@ -42,7 +42,7 @@ export const Hero = () => {
                         >
                             AI-Powered <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-start to-primary-end">
-                                Welness Practice Hub for Smarter Care Delivery
+                                Wellness Practice Hub for Smarter Care Delivery
                             </span>
                         </motion.h1>
 

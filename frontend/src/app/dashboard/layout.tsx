@@ -232,9 +232,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="h-24 flex items-center px-8 border-b border-blue-500/30">
                     <div className="flex items-center gap-3">
                         <div className="bg-white p-2 rounded-lg shadow-md">
-                            <img src="/logo.jpg" alt="ScriptishRx" className="h-6 w-auto" />
+                            <img src="/newLogo.png" alt="Scriptish" className="h-6 w-auto" />
                         </div>
-                        <span className="font-bold text-xl text-white tracking-tight">ScriptishRx</span>
+                        <span className="font-bold text-xl text-white tracking-tight">Scriptish</span>
                     </div>
 
                     <button

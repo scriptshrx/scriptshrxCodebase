@@ -300,7 +300,7 @@ export const FAQ = () => {
     const [showSupport, setShowSupport] = useState(false);
     const faqs = [
         { q: "How long does the free trial last?", a: "Unless you cancel, the free trial lasts for 14 days. You can access all premium business features during this period." },
-        { q: "Is the platform mobile friendly?", a: "Yes, ScriptishRx is fully optimized for all devices, so you can manage your business from anywhere." },
+        { q: "Is the platform mobile friendly?", a: "Yes, Scriptish is fully optimized for all devices, so you can manage your business from anywhere." },
         { q: "Is my business data secure?", a: "Absolutely. We are SOC2 Type II compliant and use enterprise-grade encryption to ensure your data is always safe." },
         { q: "Do you offer priority support?", a: "Yes, our enterprise plans include a dedicated account manager and 24/7 priority support." }
     ];
@@ -378,7 +378,7 @@ export const Testimonials = () => (
             <div className="bg-slate-50 p-8 md:p-12 rounded-[2.5rem] max-w-4xl mx-auto relative mx-4 md:mx-auto">
                 <div className="text-4xl text-primary-start absolute top-6 left-6 md:top-8 md:left-8 opacity-50 md:opacity-100">"</div>
                 <p className="text-lg md:text-2xl text-slate-700 italic font-medium leading-relaxed mb-8 relative z-10 px-2">
-                    "ScriptishRx has completely transformed how we manage our business. The AI capabilities are unmatched, and client feedback has been incredible. Highly recommended!"
+                    "Scriptish has completely transformed how we manage our business. The AI capabilities are unmatched, and client feedback has been incredible. Highly recommended!"
                 </p>
                 <div className="flex flex-col items-center gap-2">
                     <div className="w-16 h-16 bg-slate-300 rounded-full overflow-hidden shadow-md">
@@ -405,7 +405,7 @@ export const CTA = () => (
 
             <div className="relative z-10 max-w-3xl mx-auto space-y-8">
                 <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">Start Scaling Your Business Today!</h2>
-                <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto">Join thousands of companies optimizing their workflow with ScriptishRx.</p>
+                <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto">Join thousands of companies optimizing their workflow with Scriptish.</p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
                     <Button className="h-14 px-8 rounded-full bg-white text-slate-900 hover:bg-slate-100 flex items-center justify-center gap-2 w-full sm:w-auto text-lg transition-transform hover:scale-105">
                         <Smartphone className="w-5 h-5" /> App Store
@@ -575,7 +575,7 @@ export const Footer = () => {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12 mb-12 md:mb-16">
                     <div className="col-span-2 lg:col-span-1 space-y-6">
                         <div className="flex items-center gap-2 mb-4">
-                            <img src="/logo.jpg" alt="ScriptishRx Logo" className="h-16 w-auto object-contain rounded-lg" />
+                            <img src="/logo.jpg" alt="Scriptish Logo" className="h-16 w-auto object-contain rounded-lg" />
                         </div>
                         <p className="text-slate-400 leading-relaxed max-w-sm">
                             The #1 AI-powered business concierge platform for modern enterprises.
@@ -624,7 +624,7 @@ export const Footer = () => {
                     </div>
                 </div>
                 <div className="pt-8 border-t border-slate-800 text-center text-slate-500 text-sm flex flex-col md:flex-row justify-between items-center gap-4">
-                    <span>© {new Date().getFullYear()} ScriptishRx LLC. All rights reserved.</span>
+                    <span>© {new Date().getFullYear()} Scriptish LLC. All rights reserved.</span>
                     <div className="flex gap-6">
                         <a href="/legal" className="hover:text-white transition-colors">Privacy & Terms</a>
                         <button onClick={() => setActiveModal('sitemap')} className="hover:text-white transition-colors">Sitemap</button>

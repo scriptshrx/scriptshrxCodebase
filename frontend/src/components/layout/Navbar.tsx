@@ -14,7 +14,7 @@ export const Navbar = () => {
             <div className="container mx-auto flex justify-between items-center relative z-10">
                 <div className="flex items-center gap-2 relative z-50">
                     <Link href="/">
-                        <img src="/logo.jpg" alt="ScriptishRx Logo" className="h-16 w-auto object-contain cursor-pointer" />
+                        <img src="/logo.jpg" alt="Scriptish Logo" className="h-16 w-auto object-contain cursor-pointer" />
                     </Link>
                 </div>
 
