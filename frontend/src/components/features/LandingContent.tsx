@@ -317,11 +317,11 @@ export const FAQ = () => {
                         <div className="space-y-4">
                             <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                                 <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">General Inquiries</p>
-                                <a href="mailto:info@scriptishrx.com" className="text-lg font-medium text-primary-start hover:underline">info@scriptishrx.com</a>
+                                <a href="mailto:info@scriptish.net" className="text-lg font-medium text-primary-start hover:underline">info@scriptish.com</a>
                             </div>
                             <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                                 <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Technical Support</p>
-                                <a href="mailto:support@scriptishrx.com" className="text-lg font-medium text-primary-start hover:underline">support@scriptishrx.com</a>
+                                <a href="mailto:support@scriptish.net" className="text-lg font-medium text-primary-start hover:underline">support@scriptish.com</a>
                             </div>
                         </div>
                     </div>
@@ -613,7 +613,7 @@ export const Footer = () => {
                         <ul className="space-y-4 text-slate-400">
                             <li className="flex items-start gap-3">
                                 <span className="opacity-50 text-sm uppercase tracking-wider w-16 pt-1">Email:</span>
-                                <span className="text-white">info@scriptishrx.com</span>
+                                <span className="text-white">info@scriptish.com</span>
                             </li>
 
                             <li className="flex items-start gap-3">
